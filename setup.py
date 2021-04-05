@@ -5,10 +5,10 @@ version = "0.1.0"
 readme = open('README.md').read()
 
 setup(
-    name="feedWebGL2",
-    packages=["feedWebGL2"],
+    name="mouse_embryo_labeller",
+    packages=["mouse_embryo_labeller"],
     version=version,
-    description="Tools for implementing WebGL2 feedback processing stages for graphics preprocessing or other purposes",
+    description="A tool for tracking mouse embryo cell nuclei over time using data derived from 4d microscopy.",
     long_description=readme,
     include_package_data=True,
     author="Aaron Watters",
