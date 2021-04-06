@@ -8,8 +8,8 @@ class Timestamp:
     Information about a timestamp.
     """
 
-    def __init__(self, indentifier):
-        self.indentifier = indentifier
+    def __init__(self, identifier):
+        self.identifier = identifier
         self.raster3d = None
         self.labels3d = None
         self.unique_labels = None
@@ -24,7 +24,7 @@ class Timestamp:
         e = self.l3d_extruded
         u = self.unique_labels
         for a in (l, r, e, u):
-            assert a is not None, "Timestamp not fully processed for storage " + repr(self.indentifier)
+            assert a is not None, "Timestamp not fully processed for storage " + repr(self.identifier)
         f = open(to_path, "wb")
         np.savez_compressed(f, l3d_truncated=l, r3d_truncated=r, l3d_extruded=e, unique_labels=u)
         f.close()
@@ -41,7 +41,7 @@ class Timestamp:
     def extrude_labels(self):
         "extrude nonzero labels along the z axis"
         l = self.l3d_truncated
-        assert l is not None, "labels must be loaded and truncated before extrusion: " + repr(self.indentifier)
+        assert l is not None, "labels must be loaded and truncated before extrusion: " + repr(self.identifier)
         extruded = np.zeros(l.shape, dtype=l.dtype)
         mask = extruded[0]
         for i in range(len(extruded)):
@@ -54,7 +54,7 @@ class Timestamp:
     def load_mapping(self, from_path, nucleus_collection=None):
         f = open(from_path)
         json_info = json.load(f)
-        assert json_info["timestamp"] == self.indentifier, "wrong timestamp in json file: " + repr((json_info["timestamp"],self.indentifier))
+        assert json_info["timestamp"] == self.identifier, "wrong timestamp in json file: " + repr((json_info["timestamp"],self.identifier))
         f.close()
         label_to_nucleus_id = json_info["label_to_nucleus_id"]
         label_to_nucleus = {}
@@ -79,15 +79,30 @@ class Timestamp:
         result[0] = zero_map
         return result
 
+    def raster_slice(self, slice_i):
+        self.r3d_truncated[slice_i]
+
+    def raster_slice_with_boundary(self, slice_i, extruded=False):
+        # xxx could refactor pasted code...
+        r_slice = self.raster_slice(slice_i)
+        a = self.l3d_truncated
+        if extruded:
+            a = self.l3d_extruded
+        assert a is not None, "Data is not loaded and processed: " + repr(self.identifier)
+        l_slice = a[slice_i]
+        if outline:
+            bound = boundary(l_slice)
+            r_slice = np.choose(bound, [r_slice, 0])
+
     def colorized_label_slice(self, color_mapping_array, slice_i, extruded=False, outline=True):
         a = self.l3d_truncated
         if extruded:
             a = self.l3d_extruded
-        assert a is not None, "Data is not loaded and processed: " + repr(self.indentifier)
+        assert a is not None, "Data is not loaded and processed: " + repr(self.identifier)
         slice = a[slice_i]
         if outline:
             bound = boundary(slice)
-            slice = np.choose(bound, slice, 0)
+            slice = np.choose(bound, [slice, 0])
         s = slice.shape
         colors = color_mapping_array[slice.flatten()]
         sout = s + (3,)
@@ -102,13 +117,13 @@ class Timestamp:
     def json_mapping(self):
         label_to_nucleus_id = {}
         n = self.label_to_nucleus
-        assert n is not None, "Mapping not loaded: " + repr(self.indentifier)
+        assert n is not None, "Mapping not loaded: " + repr(self.identifier)
         for label in n:
             nucleus = n[label]
-            identity = (None if nucleus is None else nucleus.indentifier)
+            identity = (None if nucleus is None else nucleus.identifier)
             label_to_nucleus_id[label] = identity
         return {
-            "timestamp": self.indentifier,
+            "timestamp": self.identifier,
             "label_to_nucleus_id": label_to_nucleus_id,
         }
 
@@ -123,6 +138,12 @@ class Timestamp:
         mK, MK = nzK.min(), nzK.max()
         self.l3d_truncated = l[mI:MI, mJ:MJ, mK:MK]
         self.r3d_truncated = r[mI:MI, mJ:MJ, mK:MK]
+        self.extrude_labels()
+
+    def add_source_arrays(self, raster3d, labels3d):
+        self.raster3d = raster3d
+        self.labels3d = labels3d
+        self.check()
 
     def check(self):
         r = self.raster3d
@@ -135,7 +156,7 @@ class Timestamp:
             if u is None:
                 self.unique_labels = set(np.unique(l))
             if n is None:
-                self.label_to_nucleus = {label: None for label in range(self.unique_labels.max())}
+                self.label_to_nucleus = {label: None for label in range(max(self.unique_labels))}
             else:
                 pass # could check validity of mapping
 
