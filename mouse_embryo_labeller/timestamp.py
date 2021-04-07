@@ -97,6 +97,12 @@ class Timestamp:
         r_slice = np.choose(bound, [r_slice, 0])
         return r_slice
 
+    def get_label(self, layer, i, j, extruded=False):
+        a = self.l3d_truncated
+        if extruded:
+            a = self.l3d_extruded
+        return a[layer, i, j]
+
     def colorized_label_slice(self, color_mapping_array, slice_i, extruded=False, outline=True):
         a = self.l3d_truncated
         if extruded:

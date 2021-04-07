@@ -55,9 +55,20 @@ class VizController:
             self.extruded_checkbox,
         ])
         rimage = self.raster_image(ts)
-        self.raster_display = array_image.show_array(rimage, height=side, width=side)
+        self.raster_display = array_image.show_array(
+            rimage, 
+            height=side, 
+            width=side,
+            #hover_text_callback=self.raster_hover_text,
+        )
         limage = self.label_image(ts)
-        self.labelled_image_display = array_image.show_array(limage, height=side, width=side, scale=False)
+        self.labelled_image_display = array_image.show_array(
+            limage, 
+            height=side, 
+            width=side, 
+            scale=False,
+            hover_text_callback=self.label_image_hover,
+        )
         image_assembly = widgets.HBox([
             self.labelled_image_display,
             self.raster_display,
@@ -98,6 +109,23 @@ class VizController:
         # fix up buttons, etcetera
         self.redraw()
         return self.widget
+
+    def label_image_hover(self, x, y, array):
+        ts = self.timestamp()
+        layer = self.layers_slider.value
+        tsid = self.selected_timestamp_id
+        prefix = repr((y, x)) + ": "
+        suffix = "error"
+        extruded = self.extruded_checkbox.value
+        try:
+            label = ts.get_label(layer, y, x, extruded=extruded)
+            if label == 0:
+                suffix = "unlabelled:0"
+            else:
+                suffix = repr(label) + " no nucleus"
+        except Exception:
+            raise
+        return prefix + suffix
 
     def new_click(self, button):
         self.info.value = "New clicked."
