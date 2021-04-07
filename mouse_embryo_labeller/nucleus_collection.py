@@ -46,9 +46,6 @@ class NucleusCollection:
         id2n[identifier] = nucleus
         self.nuclei.append(nucleus)
 
-    def get_nucleus(self, identifier):
-        return self.id_to_nucleus[identifier]
-
     def get_nucleus(self, identifier, check=True):
         n = self.id_to_nucleus.get(identifier)
         if n is None and check:
