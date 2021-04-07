@@ -78,15 +78,16 @@ class NucleusCollection:
                 }
                 element.embryo_select.empty();
                 var ln = options.length;
+                var ln1 = ln - 1;
                 select.attr('size', ln)
                 for (var i=0; i<ln; i++) {
                     var option = options[i];
                     $(option).appendTo(select)
                 }
                 if (selected) {
-                    element.info.html("at " + selected + " of " + ln);
+                    element.info.html("at " + selected + " of " + ln1);
                 } else {
-                    element.info.html("embryos: " + ln);
+                    element.info.html("embryos: " + ln1);
                 }
             };
         """, height=height, width=width)
@@ -98,7 +99,9 @@ class NucleusCollection:
         if widget is None:
             widget = self.widget
         assert widget is not None, "no widget initialized"
+        nulloption = '<option value="NONE">NONE</option>'
         options = [n.html_option() for n in self.nuclei]
+        options = [nulloption] + options
         widget.element.set_embryo_options(options, callback, selected);
 
     

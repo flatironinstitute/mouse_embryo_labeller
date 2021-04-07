@@ -2,6 +2,7 @@
 import numpy as np
 import json
 import os
+from mouse_embryo_labeller import timestamp
 
 class TimestampCollection:
 
@@ -11,6 +12,12 @@ class TimestampCollection:
     def __init__(self):
         self.id_to_timestamp = {}
         self.id_sequence = []
+
+    def get_timestamp(self, identifier):
+        return self.id_to_timestamp[identifier]
+
+    def first_id(self):
+        return self.id_sequence[0]
 
     def add_timestamp(self, ts):
         identifier = ts.identifier
@@ -57,12 +64,30 @@ class TimestampCollection:
                 print ("storing ts", (json_path, npz_path))
             ts.save_mapping(json_path)
             ts.save_truncated_arrays(npz_path)
-        manifest_path = (pattern % ("_manifest")) + ".json"
+        manifest_path = manifest_file_path(pattern)
         if verbose:
             print("   Storing manifest", manifest_path, len(manifest))
         f = open(manifest_path, "w")
         json.dump(manifest, f, indent=2)
         f.close()
+
+def manifest_file_path(from_pattern):
+    return (from_pattern % ("_manifest")) + ".json"
+
+def load_preprocessed_timestamps(from_folder, filename="ts_manifest.json"):
+    def expand(fn):
+        return os.path.join(from_folder, fn)
+    mpath = expand(filename)
+    f = open(mpath)
+    manifest = json.load(f)
+    f.close()
+    result = TimestampCollection()
+    for description in manifest:
+        ts = timestamp.Timestamp(description["identity"])
+        ts.load_truncated_arrays(expand(description["npz_path"]))
+        ts.load_mapping(expand(description["json_path"]))
+        result.add_timestamp(ts)
+    return result
 
 def filename_only(path):
     return os.path.split(path)[-1]

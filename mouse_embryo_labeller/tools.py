@@ -7,10 +7,13 @@ from PIL import Image, ImageSequence
 import numpy as np
 from mouse_embryo_labeller import timestamp
 from mouse_embryo_labeller import timestamp_collection
+from mouse_embryo_labeller import nucleus_collection
+
+EXAMPLE_FOLDER = "../example_data/"
 
 def preprocess_sample_data(
     stride=4, 
-    destination="../example_data/",
+    destination=EXAMPLE_FOLDER,
     labels_pattern="/Users/awatters/misc/LisaBrown/mouse-embryo-nuclei/H9/H9_%s_Labels.tiff",
     intensities_pattern="/Users/awatters/misc/LisaBrown/mouse-embryo-nuclei/H9OriginalIntensityImages/klbOut_CH1_%06d.klb",
     sanity_limit=10000,
@@ -52,7 +55,16 @@ def preprocess_sample_data(
     ts_pattern = destination + "/ts%s"
     print("storing timestamps with pattern", repr(ts_pattern))
     tsc.store_all(ts_pattern)
+    print("Creating empty nucleus collection...")
+    nc = nucleus_collection.NucleusCollection()
+    nc.save_json(destination)
     print("done.")
+
+def get_example_nucleus_collection(from_folder=EXAMPLE_FOLDER):
+    return nucleus_collection.collection_from_json(from_folder)
+
+def get_example_timestamp_collection(from_folder=EXAMPLE_FOLDER):
+    return timestamp_collection.load_preprocessed_timestamps(from_folder)
 
 def load_tiff_array(tiff_path):
     im = Image.open(tiff_path)

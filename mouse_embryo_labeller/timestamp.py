@@ -22,7 +22,7 @@ class Timestamp:
         l = self.l3d_truncated
         r = self.r3d_truncated
         e = self.l3d_extruded
-        u = self.unique_labels
+        u = np.array(list(self.unique_labels), dtype=np.int)
         for a in (l, r, e, u):
             assert a is not None, "Timestamp not fully processed for storage " + repr(self.identifier)
         f = open(to_path, "wb")
@@ -35,8 +35,11 @@ class Timestamp:
         self.l3d_extruded = L["l3d_extruded"]
         self.l3d_truncated = L["l3d_truncated"]
         self.r3d_truncated = L["r3d_truncated"]
-        self.unique_labels = L["unique_labels"]
+        self.unique_labels = set(L["unique_labels"].tolist())
         f.close()
+
+    def nlayers(self):
+        return len(self.l3d_truncated)
 
     def extrude_labels(self):
         "extrude nonzero labels along the z axis"
@@ -67,11 +70,11 @@ class Timestamp:
 
     def colorization_mapping(self, zero_map=(0,0,0), unassigned=(100,100,100)):
         u = self.unique_labels
-        ln = u.max()
+        ln = max(u) + 1
         result = np.zeros((ln, 3), dtype=np.int)
         n = self.label_to_nucleus
         for i in range(ln):
-            nucleus = n[i]
+            nucleus = n.get(i)
             if nucleus is None:
                 result[i] = unassigned
             else:
@@ -80,7 +83,7 @@ class Timestamp:
         return result
 
     def raster_slice(self, slice_i):
-        self.r3d_truncated[slice_i]
+        return self.r3d_truncated[slice_i]
 
     def raster_slice_with_boundary(self, slice_i, extruded=False):
         # xxx could refactor pasted code...
@@ -90,9 +93,9 @@ class Timestamp:
             a = self.l3d_extruded
         assert a is not None, "Data is not loaded and processed: " + repr(self.identifier)
         l_slice = a[slice_i]
-        if outline:
-            bound = boundary(l_slice)
-            r_slice = np.choose(bound, [r_slice, 0])
+        bound = boundary(l_slice)
+        r_slice = np.choose(bound, [r_slice, 0])
+        return r_slice
 
     def colorized_label_slice(self, color_mapping_array, slice_i, extruded=False, outline=True):
         a = self.l3d_truncated
