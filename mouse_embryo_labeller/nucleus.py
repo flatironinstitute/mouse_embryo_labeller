@@ -16,6 +16,21 @@ class Nucleus:
     def html_color(self):
         return "rgb(%s,%s,%s)" % tuple(self.color)
 
+    def html_info(self, nucleus_collection):
+        i = self.identifier
+        pid = self.parent_id
+        c = self.html_color()
+        prefix =  '<span style="background-color:%s">NUCLEUS</span> %s ' % (c, i)
+        suffix = ""
+        if pid:
+            p = nucleus_collection.get_nucleus(pid, check=False)
+            if p is None:
+                suffix = "BAD PARENT " + repr(pid)
+            else:
+                cp = p.html_color()
+                suffix = '<span style="background-color:%s">PARENT</span> %s ' % (cp, pid)
+        return prefix + suffix
+
     def html_option(self, selected=False):
         s = ""
         if selected:

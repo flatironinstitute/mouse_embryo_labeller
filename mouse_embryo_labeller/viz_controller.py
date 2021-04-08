@@ -139,7 +139,8 @@ class VizController:
         if n is None:
             info.value = "No nucleus currently selected."
         else:
-            info.value = '<span style="background-color:%s">NUCLEUS</span> %s' % (n.html_color(), n.identifier)
+            #info.value = '<span style="background-color:%s">NUCLEUS</span> %s' % (n.html_color(), n.identifier)
+            info.value = n.html_info(self.nucleus_collection)
 
     def label_image_click(self, event):
         position = event['model_location']
@@ -188,6 +189,9 @@ class VizController:
             if label == 0:
                 suffix = "unlabelled:0"
             else:
+                n = ts.get_nucleus(label)
+                if n is not None:
+                    suffix = "%s :: %s" % (label, nucleus.identifier)
                 suffix = repr(label) + " no nucleus"
         except Exception:
             raise

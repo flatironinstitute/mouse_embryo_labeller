@@ -72,6 +72,9 @@ class Timestamp:
     def assign_nucleus(self, label, nucleus):
         self.label_to_nucleus[label] = nucleus
 
+    def get_nucleus(self, label):
+        return self.label_to_nucleus.get(label)
+
     def colorization_mapping(self, zero_map=(0,0,0), unassigned=(100,100,100)):
         u = self.unique_labels
         ln = max(u) + 1
