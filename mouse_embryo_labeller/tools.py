@@ -63,8 +63,8 @@ def preprocess_sample_data(
 def get_example_nucleus_collection(from_folder=EXAMPLE_FOLDER):
     return nucleus_collection.collection_from_json(from_folder)
 
-def get_example_timestamp_collection(from_folder=EXAMPLE_FOLDER):
-    return timestamp_collection.load_preprocessed_timestamps(from_folder)
+def get_example_timestamp_collection(from_folder=EXAMPLE_FOLDER, nucleus_collection=None):
+    return timestamp_collection.load_preprocessed_timestamps(from_folder, nucleus_collection)
 
 def load_tiff_array(tiff_path):
     im = Image.open(tiff_path)
