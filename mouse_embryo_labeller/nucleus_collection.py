@@ -46,6 +46,14 @@ class NucleusCollection:
         id2n[identifier] = nucleus
         self.nuclei.append(nucleus)
 
+    def forget_nucleus_id(self, nid, save_folder):
+        id2n = self.id_to_nucleus
+        ns = self.nuclei
+        delete_n = id2n[nid]
+        self.id_to_nucleus = {identifier: nucleus for (identifier, nucleus) in id2n.items() if identifier != nid}
+        self.nuclei = [n for n in ns if n is not delete_n]
+        self.save_json(save_folder)
+
     def get_nucleus(self, identifier, check=True):
         n = self.id_to_nucleus.get(identifier)
         if n is None and check:
