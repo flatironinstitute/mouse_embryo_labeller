@@ -135,9 +135,16 @@ class VizController:
         ])
         # reset colors etc
         self.change_color()
+        self.hide_color_selector()
         # fix up buttons, etcetera
         self.redraw()
         return self.widget
+
+    def hide_color_selector(self):
+        self.color_selector.element.hide()
+
+    def show_color_selector(self):
+        self.color_selector.element.show()
 
     def delete_click(self, button):
         del_id = self.selected_nucleus_id
@@ -226,8 +233,9 @@ class VizController:
             else:
                 n = ts.get_nucleus(label)
                 if n is not None:
-                    suffix = "%s :: %s" % (label, nucleus.identifier)
-                suffix = repr(label) + " no nucleus"
+                    suffix = "%s :: %s" % (label, n.identifier)
+                else:
+                    suffix = repr(label) + " no nucleus"
         except Exception:
             raise
         return prefix + suffix
@@ -251,9 +259,15 @@ class VizController:
         self.new_button.disabled = True
         self.child_button.disabled = True
         self.color_selector.reset_color_choice()
+        self.hide_color_selector()
 
     def nucleus_name_change(self, change):
-        self.color_selector.reset_color_choice()
+        if self.nucleus_name_input.value:
+            self.show_color_selector()
+            self.color_selector.reset_color_choice()
+            self.info.value = "Please select a color for nucleus."
+        else:
+            self.hide_color_selector()
         self.child_button.disabled = True
         self.new_button.disabled = True
 
@@ -261,7 +275,7 @@ class VizController:
         self.color_array = color_array
         self.html_color = html_color
         name = self.nucleus_name_input.value
-        if (name != "") and (self.nucleus_collection.get_nucleus(name, check=False) is None):
+        if (color_array is not None) and (name != "") and (self.nucleus_collection.get_nucleus(name, check=False) is None):
             self.new_button.disabled = False
             self.child_button.disabled = (self.selected_nucleus_id is None)
 
