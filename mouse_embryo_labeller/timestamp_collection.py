@@ -74,7 +74,7 @@ class TimestampCollection:
 def manifest_file_path(from_pattern):
     return (from_pattern % ("_manifest")) + ".json"
 
-def load_preprocessed_timestamps(from_folder, filename="ts_manifest.json"):
+def load_preprocessed_timestamps(from_folder, nucleus_collection, filename="ts_manifest.json"):
     def expand(fn):
         return os.path.join(from_folder, fn)
     mpath = expand(filename)
@@ -85,7 +85,7 @@ def load_preprocessed_timestamps(from_folder, filename="ts_manifest.json"):
     for description in manifest:
         ts = timestamp.Timestamp(description["identity"])
         ts.load_truncated_arrays(expand(description["npz_path"]))
-        ts.load_mapping(expand(description["json_path"]))
+        ts.load_mapping(expand(description["json_path"]), nucleus_collection)
         result.add_timestamp(ts)
     return result
 
