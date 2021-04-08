@@ -66,7 +66,7 @@ class Timestamp:
             if identifier is not None:
                 assert nucleus_collection is not None, "no collection -- cannot map nucleus id. " + repr((label, identifier))
                 n = nucleus_collection.get_nucleus(identifier)
-                label_to_nucleus[identifier] = n
+                label_to_nucleus[label] = n
         self.label_to_nucleus = label_to_nucleus
 
     def assign_nucleus(self, label, nucleus):
