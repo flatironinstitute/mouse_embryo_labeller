@@ -22,8 +22,12 @@ class Nucleus:
             s = " selected "
         c = self.html_color()
         i = self.identifier
+        p = self.parent_id
+        txt = i
+        if p:
+            txt = "%s&lt;%s" % (i, p)
         return '<option value="%s" %s style="background-color:%s">%s</option>' % (
-            i, s, c, i,
+            i, s, c, txt,
         )
 
     def json_description(self):

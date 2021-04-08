@@ -194,7 +194,7 @@ class VizController:
         return prefix + suffix
 
     def child_click(self, button):
-        return self.new_click(button, parent=self.selected_nucleus_id)
+        return self.new_click(button, parent_id=self.selected_nucleus_id)
 
     def new_click(self, button, parent_id=None):
         self.info.value = "New clicked."
