@@ -36,7 +36,7 @@ class NucleusCollection:
             to_filename = self.filename
         to_path = os.path.join(to_folder, to_filename)
         f = open(to_path, "w")
-        json.dump(json_ob, f)
+        json.dump(json_ob, f, indent=2)
         f.close()
 
     def add_nucleus(self, nucleus):
