@@ -62,12 +62,21 @@ class VizController:
             description="extruded",
         )
         self.extruded_checkbox.observe(self.redraw_on_change, names='value')
+        self.blur_checkbox = widgets.Checkbox(
+            value=True,
+            description="blur",
+        )
+        checkboxen = widgets.VBox([
+            self.extruded_checkbox,
+            self.blur_checkbox,
+        ])
+        self.blur_checkbox.observe(self.redraw_on_change, names='value')
         top_bar = widgets.HBox([
             self.prev_button,
             self.timestamp_html,
             self.next_button,
             self.layers_slider,
-            self.extruded_checkbox,
+            checkboxen,
         ])
         rimage = self.raster_image(ts)
         self.raster_display = array_image.show_array(
@@ -304,4 +313,6 @@ class VizController:
     def raster_image(self, ts):
         extruded = self.extruded_checkbox.value
         layer = self.layers_slider.value
-        return ts.raster_slice_with_boundary(layer, extruded)
+        blur = self.blur_checkbox.value
+        return ts.raster_slice_with_boundary(layer, extruded, blur=blur)
+ 

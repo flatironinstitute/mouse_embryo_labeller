@@ -1,6 +1,7 @@
 
 import numpy as np
 import json
+from scipy.ndimage import gaussian_filter
 
 class Timestamp:
 
@@ -99,15 +100,24 @@ class Timestamp:
     def raster_slice(self, slice_i):
         return self.r3d_truncated[slice_i]
 
-    def raster_slice_with_boundary(self, slice_i, extruded=False):
+    def raster_slice_with_boundary(self, slice_i, extruded=False, colorize=True, blur=True):
         # xxx could refactor pasted code...
         r_slice = self.raster_slice(slice_i)
+        if blur:
+            sigma = 1
+            blurred_image = gaussian_filter(r_slice, sigma=sigma)
+            r_slice = blurred_image
+        if colorize:
+            r_slice = false_colors(r_slice)
         a = self.l3d_truncated
         if extruded:
             a = self.l3d_extruded
         assert a is not None, "Data is not loaded and processed: " + repr(self.identifier)
         l_slice = a[slice_i]
         bound = boundary(l_slice)
+        if colorize:
+            # make broadcast compatible
+            bound = bound.reshape(bound.shape + (1,))
         r_slice = np.choose(bound, [r_slice, 0])
         return r_slice
 
@@ -188,9 +198,41 @@ class Timestamp:
             else:
                 pass # could check validity of mapping
 
+def false_colors(array):
+    farray = array.astype(np.float)
+    m = farray.min()
+    M = farray.max()
+    M = max(M, m + 0.001)
+    narray = (farray - m) / (M - m)
+    byte_array = (narray * 255).astype(np.int)
+    shape = array.shape
+    flat_bytes = byte_array.flatten()
+    flat_colorized = COLORMAP[flat_bytes]
+    return flat_colorized.reshape(shape + (3,))
+
+def make_color_map():
+    colormap = np.zeros((256, 3), dtype=np.int)
+    for i in range(128):
+        i2 = 2 * i
+        im = 256 - i2
+        # first half from blue to green
+        colormap[i] = (0, i2, im)
+        # second half from green to red
+        colormap[i + 128] = (im, 0, i2)
+    return colormap
+
+COLORMAP = make_color_map()
 
 def boundary(array):
     result = np.zeros(array.shape, dtype=np.bool)
     result[:-1, 1:] = (array[1:, 1:] != array[:-1, 1:])
     result[1:, :-1] |= (array[1:, 1:] != array[1:, :-1])
     return result
+
+def test():
+    x = np.arange(15).reshape((5,3))
+    print(x)
+    print (false_colors(x))
+
+if __name__ == "__main__":
+    test()
