@@ -117,6 +117,10 @@ class Timestamp:
             a = self.l3d_extruded
         return a[layer, i, j]
 
+    def get_intensity(self, layer, i, j):
+        a = self.r3d_truncated
+        return a[layer, i, j]
+
     def colorized_label_slice(self, color_mapping_array, slice_i, extruded=False, outline=True):
         a = self.l3d_truncated
         if extruded:

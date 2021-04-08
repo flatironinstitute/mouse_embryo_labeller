@@ -74,7 +74,7 @@ class VizController:
             rimage, 
             height=side, 
             width=side,
-            #hover_text_callback=self.raster_hover_text,
+            hover_text_callback=self.raster_hover_text,
         )
         limage = self.label_image(ts)
         self.labelled_image_display = array_image.show_array(
@@ -194,6 +194,14 @@ class VizController:
         assert tsid is not None, "cannot save -- no selected ts"
         filename = "ts%s.json" % tsid
         return os.path.join(self.folder, filename)
+
+    def raster_hover_text(self, x, y, array):
+        ts = self.timestamp()
+        layer = self.layers_slider.value
+        #tsid = self.selected_timestamp_id
+        #prefix = repr((y, x)) + ": "
+        intensity = ts.get_intensity(layer, y, x)
+        return "%s,%s : %s" % (y, x, intensity)
 
     def label_image_hover(self, x, y, array):
         ts = self.timestamp()
