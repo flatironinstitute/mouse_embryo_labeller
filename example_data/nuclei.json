@@ -1,0 +1,47 @@
+[
+  {
+    "identifier": "n2",
+    "color": [
+      166,
+      139,
+      255
+    ],
+    "parent_id": "n1"
+  },
+  {
+    "identifier": "z1",
+    "color": [
+      51,
+      242,
+      100
+    ],
+    "parent_id": "n2"
+  },
+  {
+    "identifier": "mm",
+    "color": [
+      143,
+      243,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "xl",
+    "color": [
+      255,
+      249,
+      115
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "h5",
+    "color": [
+      255,
+      6,
+      255
+    ],
+    "parent_id": null
+  }
+]

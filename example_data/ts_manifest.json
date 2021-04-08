@@ -1,0 +1,57 @@
+[
+  {
+    "identity": 0,
+    "json_path": "ts0.json",
+    "npz_path": "ts0.npz"
+  },
+  {
+    "identity": 1,
+    "json_path": "ts1.json",
+    "npz_path": "ts1.npz"
+  },
+  {
+    "identity": 2,
+    "json_path": "ts2.json",
+    "npz_path": "ts2.npz"
+  },
+  {
+    "identity": 3,
+    "json_path": "ts3.json",
+    "npz_path": "ts3.npz"
+  },
+  {
+    "identity": 4,
+    "json_path": "ts4.json",
+    "npz_path": "ts4.npz"
+  },
+  {
+    "identity": 5,
+    "json_path": "ts5.json",
+    "npz_path": "ts5.npz"
+  },
+  {
+    "identity": 6,
+    "json_path": "ts6.json",
+    "npz_path": "ts6.npz"
+  },
+  {
+    "identity": 7,
+    "json_path": "ts7.json",
+    "npz_path": "ts7.npz"
+  },
+  {
+    "identity": 8,
+    "json_path": "ts8.json",
+    "npz_path": "ts8.npz"
+  },
+  {
+    "identity": 9,
+    "json_path": "ts9.json",
+    "npz_path": "ts9.npz"
+  },
+  {
+    "identity": 10,
+    "json_path": "ts10.json",
+    "npz_path": "ts10.npz"
+  }
+]
