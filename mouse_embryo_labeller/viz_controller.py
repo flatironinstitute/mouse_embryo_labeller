@@ -82,8 +82,8 @@ class VizController:
         )
         self.labelled_image_display.image_display.on("click", self.label_image_click)
         image_assembly = widgets.HBox([
-            self.labelled_image_display,
             self.raster_display,
+            self.labelled_image_display,
         ])
         # nucleus creation controls
         #self.nucleus_info = widgets.HTML(value="Enter name.")
