@@ -72,6 +72,13 @@ class Timestamp:
     def assign_nucleus(self, label, nucleus):
         self.label_to_nucleus[label] = nucleus
 
+    def forget_nucleus(self, nucleus):
+        l2n = self.label_to_nucleus
+        found = (nucleus in list(l2n.values()))
+        if found:
+            self.label_to_nucleus = {l: n for (l, n) in l2n.items() if n is not nucleus}
+        return found
+
     def get_nucleus(self, label):
         return self.label_to_nucleus.get(label)
 

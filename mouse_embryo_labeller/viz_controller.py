@@ -36,10 +36,14 @@ class VizController:
         widen_notebook()
         self.side = side
         ts = self.timestamp()
+
         self.info = widgets.HTML(value="Nucleus Labeller Tool.")
         self.nucleus_info = widgets.HTML(value="Please select or create an nucleus.")
+        self.delete_button = widgets.Button(description="DELETE", disabled=True)
+        self.delete_button.on_click(self.delete_click)
         info_area1 = widgets.HBox([self.info], layout=widgets.Layout(border='solid'))
-        info_area = widgets.HBox([info_area1, self.nucleus_info])
+        info_area = widgets.HBox([info_area1, self.nucleus_info, self.delete_button])
+
         self.prev_button = widgets.Button(description="< Prev")
         self.prev_button.on_click(self.go_previous)
         self.timestamp_html = widgets.HTML(value=repr(self.selected_timestamp_id))
@@ -126,6 +130,17 @@ class VizController:
         self.redraw()
         return self.widget
 
+    def delete_click(self, button):
+        del_id = self.selected_nucleus_id
+        n = self.get_nucleus()
+        assert n is not None, "can't delete no nucleus found " + repr(del_id)
+        self.selected_nucleus_id = None
+        self.timestamp_collection.forget_nucleus(n, self)
+        self.nucleus_collection.forget_nucleus_id(del_id, self.folder)
+        self.nucleus_collection.set_widget_options(callback=None, selected=None)
+        self.redraw()
+        self.info.value = "DELETED " + repr(del_id)
+
     def set_nucleus_id(self, identifier):
         if self.nucleus_collection.get_nucleus(identifier, check=False):
             self.selected_nucleus_id = identifier
@@ -138,9 +153,11 @@ class VizController:
         info = self.nucleus_info
         if n is None:
             info.value = "No nucleus currently selected."
+            self.delete_button.disabled = True
         else:
             #info.value = '<span style="background-color:%s">NUCLEUS</span> %s' % (n.html_color(), n.identifier)
             info.value = n.html_info(self.nucleus_collection)
+            self.delete_button.disabled = False
 
     def label_image_click(self, event):
         position = event['model_location']
@@ -171,8 +188,9 @@ class VizController:
         ts.save_mapping(path)
         self.redraw()
 
-    def ts_assignment_path(self):
-        tsid = self.selected_timestamp_id
+    def ts_assignment_path(self, tsid=None):
+        if tsid is None:
+            tsid = self.selected_timestamp_id
         assert tsid is not None, "cannot save -- no selected ts"
         filename = "ts%s.json" % tsid
         return os.path.join(self.folder, filename)

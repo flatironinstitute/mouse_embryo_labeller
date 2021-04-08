@@ -24,6 +24,13 @@ class TimestampCollection:
         self.id_to_timestamp[identifier] = ts
         self.id_sequence.append(identifier)
 
+    def forget_nucleus(self, n, controller):
+        for (ts_id, ts) in self.id_to_timestamp.items():
+            found = ts.forget_nucleus(n)
+            if found:
+                save_path = controller.ts_assignment_path(ts_id)
+                ts.save_mapping(save_path)
+
     def previous_next(self, ts_id):
         prv = nxt = None
         seq = self.id_sequence
