@@ -62,11 +62,15 @@ class Timestamp:
         label_to_nucleus_id = json_info["label_to_nucleus_id"]
         label_to_nucleus = {}
         for (label, identifier) in label_to_nucleus_id.items():
+            label = int(label)
             if identifier is not None:
                 assert nucleus_collection is not None, "no collection -- cannot map nucleus id. " + repr((label, identifier))
                 n = nucleus_collection.get_nucleus(identifier)
                 label_to_nucleus[identifier] = n
         self.label_to_nucleus = label_to_nucleus
+
+    def assign_nucleus(self, label, nucleus):
+        self.label_to_nucleus[label] = nucleus
 
     def colorization_mapping(self, zero_map=(0,0,0), unassigned=(100,100,100)):
         u = self.unique_labels
@@ -130,6 +134,7 @@ class Timestamp:
         for label in n:
             nucleus = n[label]
             identity = (None if nucleus is None else nucleus.identifier)
+            label = str(label)
             label_to_nucleus_id[label] = identity
         return {
             "timestamp": self.identifier,
