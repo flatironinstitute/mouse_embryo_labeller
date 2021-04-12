@@ -95,6 +95,15 @@ class VizController:
             description="layer",
         )
         self.layers_slider.observe(self.redraw_on_change, names='value')
+        self.colorize_checkbox = widgets.Checkbox(
+            value=False,
+            description="pseudocolors",
+        )
+        self.colorize_checkbox.observe(self.redraw_on_change, names='value')
+        layers_assembly = widgets.VBox([
+            self.layers_slider,
+            self.colorize_checkbox,
+        ])
         self.extruded_checkbox = widgets.Checkbox(
             value=True,
             description="extruded",
@@ -113,7 +122,7 @@ class VizController:
             self.prev_button,
             self.timestamp_html,
             self.next_button,
-            self.layers_slider,
+            layers_assembly,
             checkboxen,
         ])
         rimage = self.raster_image(ts)
@@ -400,5 +409,6 @@ class VizController:
         extruded = self.extruded_checkbox.value
         layer = self.layers_slider.value
         blur = self.blur_checkbox.value
-        return ts.raster_slice_with_boundary(layer, extruded, blur=blur)
+        colorize = self.colorize_checkbox.value
+        return ts.raster_slice_with_boundary(layer, extruded, blur=blur, colorize=colorize)
  
