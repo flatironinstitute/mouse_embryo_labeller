@@ -1,47 +1,29 @@
 [
   {
-    "identifier": "n2",
+    "identifier": "abc",
     "color": [
-      166,
-      139,
-      255
-    ],
-    "parent_id": "n1"
-  },
-  {
-    "identifier": "z1",
-    "color": [
-      51,
-      242,
-      100
-    ],
-    "parent_id": "n2"
-  },
-  {
-    "identifier": "mm",
-    "color": [
-      143,
-      243,
-      255
+      219,
+      158,
+      87
     ],
     "parent_id": null
   },
   {
-    "identifier": "xl",
+    "identifier": "lpq",
     "color": [
+      43,
+      219,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "dfd",
+    "color": [
+      211,
       255,
-      249,
-      115
+      211
     ],
-    "parent_id": null
-  },
-  {
-    "identifier": "h5",
-    "color": [
-      255,
-      6,
-      255
-    ],
-    "parent_id": null
+    "parent_id": "lpq"
   }
 ]
