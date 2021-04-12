@@ -7,6 +7,44 @@ from mouse_embryo_labeller import nucleus
 import os
 
 
+ARROWS = [LEFT, UP, RIGHT, DOWN] = "LEFT UP RIGHT DOWN".split()
+
+NAME_TO_ARROW_KEY_NUMBER = {
+    LEFT: 37,
+    UP: 38,
+    RIGHT: 39,
+    DOWN: 40,
+}
+NUM_TO_KEY = {str(num): key for (key, num) in NAME_TO_ARROW_KEY_NUMBER.items()}
+
+KEYPRESS_JS = """
+
+element.keypress_handler = function(event) {
+    var num = event.which;
+    var key = NUM_TO_KEY[num];
+    if (key) {
+        keypress_callback(key);
+        event.preventDefault();  // disallow defaults for handled keys
+    } else {
+        keypress_callback("unknown key press. " + num)
+    }
+};
+
+var f = element.parent();
+f.attr('tabindex', 0);
+f.keydown(element.keypress_handler);
+
+element.keypress_focus = function () {
+    f.focus();
+};
+
+element.keypress_focus();
+"""
+
+def attach_keypress_handler(to_proxy_widget, keypress_callback, num_to_key=NUM_TO_KEY):
+    to_proxy_widget.js_init(KEYPRESS_JS, NUM_TO_KEY=num_to_key, keypress_callback=keypress_callback)
+
+
 class VizController:
 
     """
@@ -98,6 +136,7 @@ class VizController:
             self.raster_display,
             self.labelled_image_display,
         ])
+        attach_keypress_handler(self.raster_display, self.keypress_callback)
         # nucleus creation controls
         #self.nucleus_info = widgets.HTML(value="Enter name.")
         self.nucleus_name_input = widgets.Text(
@@ -139,6 +178,33 @@ class VizController:
         # fix up buttons, etcetera
         self.redraw()
         return self.widget
+
+    def keypress_callback(self, txt):
+        self.info.value = "Key press: " + repr(txt)
+        current_layer = self.current_layer()
+        if txt == UP:
+            self.change_layer(current_layer + 1)
+        elif txt == DOWN:
+            self.change_layer(current_layer - 1)
+        elif txt == RIGHT:
+            self.go_next(None)
+        elif txt == LEFT:
+            self.go_previous(None)
+        else:
+            self.info.value = "Use \u21e6 \u21e8 for time; \u21e7 \u21e9 for layers"
+
+    def current_layer(self):
+        return self.layers_slider.value
+
+    def change_layer(self, new_value):
+        ts = self.timestamp()
+        if new_value < 0:
+            self.info.value = "No previous layer: " + repr(new_value)
+        elif new_value >= ts.nlayers():
+            self.info.value = "No next layer: " + repr(new_value)
+        else:
+            self.info.value = "Change layer: " + repr(new_value)
+            self.layers_slider.value = new_value
 
     def hide_color_selector(self):
         self.color_selector.element.hide()
@@ -285,14 +351,20 @@ class VizController:
 
     def go_next(self, button):
         (prv, nxt) = self.previous_next()
-        assert nxt is not None, "No next timestamp: " + repr(self.selected_timestamp_id)
+        if nxt is None:
+            self.info.value = "No next timestamp: " + repr(self.selected_timestamp_id)
+            return
         self.selected_timestamp_id = nxt
+        self.info.value = "next timestamp: " + repr(nxt)
         self.redraw()
 
     def go_previous(self, button):
         (prv, nxt) = self.previous_next()
-        assert prv is not None, "No previous timestamp: " + repr(self.selected_timestamp_id)
+        if prv is None:
+            self.info.value = "No previous timestamp: " + repr(self.selected_timestamp_id)
+            return
         self.selected_timestamp_id = prv
+        self.info.vaklue = "previous timestamp: " + repr(prv)
         self.redraw()
 
     def previous_next(self):
