@@ -4,6 +4,7 @@ from jp_doodle import array_image
 from jp_doodle.data_tables import widen_notebook
 from jp_doodle import color_chooser
 from mouse_embryo_labeller import nucleus
+from mouse_embryo_labeller import color_list
 import os
 
 
@@ -160,9 +161,14 @@ class VizController:
         self.child_button = widgets.Button(description="Child", disabled=True)
         self.child_button.on_click(self.child_click)
         self.color_selector = color_chooser.chooser(side=0.5 * side, callback=self.change_color)
+        self.color_display = widgets.HTML(value="no color")
+        self.color_assembly = widgets.VBox([
+            self.color_display,
+            self.color_selector,
+        ], layout=widgets.Layout(border='solid', visibility="hidden"))
         make_nucleus_assembly = widgets.HBox([
             self.nucleus_name_input,
-            self.color_selector,
+            self.color_assembly,
             self.child_button,
             self.new_button,
             #self.nucleus_info,
@@ -216,10 +222,12 @@ class VizController:
             self.layers_slider.value = new_value
 
     def hide_color_selector(self):
-        self.color_selector.element.hide()
+        #self.color_selector.element.hide()
+        self.color_assembly.layout.visibility = "hidden"
 
     def show_color_selector(self):
-        self.color_selector.element.show()
+        #self.color_selector.element.show()
+        self.color_assembly.layout.visibility = "visible"
 
     def delete_click(self, button):
         del_id = self.selected_nucleus_id
@@ -321,7 +329,8 @@ class VizController:
     def new_click(self, button, parent_id=None):
         self.info.value = "New clicked."
         identifier = self.nucleus_name_input.value
-        color = self.color_selector.color_array
+        #color = self.color_selector.color_array
+        color = self.color_array
         n = nucleus.Nucleus(identifier, color, parent_id)
         self.nucleus_collection.add_nucleus(n)
         self.nucleus_collection.save_json(self.folder)
@@ -334,6 +343,7 @@ class VizController:
         self.new_button.disabled = True
         self.child_button.disabled = True
         self.color_selector.reset_color_choice()
+        self.color_display.value = "No color."
         self.hide_color_selector()
 
     def nucleus_name_change(self, change):
@@ -345,10 +355,21 @@ class VizController:
             self.hide_color_selector()
         self.child_button.disabled = True
         self.new_button.disabled = True
+        self.pick_unused_color()
+
+    def pick_unused_color(self):
+        color_array = color_list.color_arrays[-1]
+        in_use = self.nucleus_collection.colors_in_use()
+        for array in color_list.color_arrays:
+            if tuple(array) not in in_use:
+                color_array = array
+        self.change_color(color_array)
 
     def change_color(self, color_array=None, html_color=None):
         self.color_array = color_array
-        self.html_color = html_color
+        if color_array is not None:
+            self.html_color = color_list.rgbhtml(color_array)
+            self.color_display.value = color_list.colordiv(color_array)
         name = self.nucleus_name_input.value
         if (color_array is not None) and (name != "") and (self.nucleus_collection.get_nucleus(name, check=False) is None):
             self.new_button.disabled = False

@@ -30,6 +30,9 @@ class NucleusCollection:
         for n in nuclei:
             self.add_nucleus(n)
 
+    def colors_in_use(self):
+        return set(tuple(n.color) for n in self.nuclei)
+
     def save_json(self, to_folder, to_filename=None):
         json_ob = [n.json_description() for n in self.nuclei]
         if to_filename is None:
