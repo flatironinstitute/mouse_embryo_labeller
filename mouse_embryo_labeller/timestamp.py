@@ -100,7 +100,7 @@ class Timestamp:
     def raster_slice(self, slice_i):
         return self.r3d_truncated[slice_i]
 
-    def raster_slice_with_boundary(self, slice_i, extruded=False, colorize=True, blur=True):
+    def raster_slice_with_boundary(self, slice_i, extruded=False, colorize=True, blur=True, normalized=True):
         # xxx could refactor pasted code...
         r_slice = self.raster_slice(slice_i)
         if blur:
@@ -109,6 +109,8 @@ class Timestamp:
             r_slice = blurred_image
         if colorize:
             r_slice = false_colors(r_slice)
+        elif normalized:
+            r_slice = normalize(r_slice)
         a = self.l3d_truncated
         if extruded:
             a = self.l3d_extruded
@@ -199,16 +201,21 @@ class Timestamp:
                 pass # could check validity of mapping
 
 def false_colors(array):
+    byte_array = normalize(array)
+    shape = array.shape
+    flat_bytes = byte_array.flatten()
+    flat_colorized = COLORMAP[flat_bytes]
+    return flat_colorized.reshape(shape + (3,))
+
+def normalize(array):
+    "adjust contrast for array to range 0..255"
     farray = array.astype(np.float)
     m = farray.min()
     M = farray.max()
     M = max(M, m + 0.001)
     narray = (farray - m) / (M - m)
     byte_array = (narray * 255).astype(np.int)
-    shape = array.shape
-    flat_bytes = byte_array.flatten()
-    flat_colorized = COLORMAP[flat_bytes]
-    return flat_colorized.reshape(shape + (3,))
+    return byte_array
 
 def make_color_map():
     colormap = np.zeros((256, 3), dtype=np.int)
