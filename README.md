@@ -26,7 +26,7 @@ so it can be easily updated as needed.
 Using the command line with the current working directory set to an appropriate folder:
 
 ```bash
-% git clone git@github.com:AaronWatters/jp_doodle.git
+% git clone https://github.com/AaronWatters/jp_doodle.git
 % cd jp_doodle
 % pip install -e .
 % cd ..
@@ -35,7 +35,7 @@ Using the command line with the current working directory set to an appropriate 
 Then clone and install `mouse_embryo_labeller` in the same folder also in development mode:
 
 ```bash
-% git clone git@github.com:flatironinstitute/mouse_embryo_labeller.git
+% git clone https://github.com/flatironinstitute/mouse_embryo_labeller.git
 % cd mouse_embryo_labeller
 % pip install -e .
 % cd ..
