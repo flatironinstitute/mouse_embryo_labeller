@@ -1,6 +1,6 @@
 [
   {
-    "identifier": "abc",
+    "identifier": "a1",
     "color": [
       219,
       158,
@@ -9,21 +9,12 @@
     "parent_id": null
   },
   {
-    "identifier": "lpq",
+    "identifier": "bbb",
     "color": [
-      43,
-      219,
-      123
-    ],
-    "parent_id": null
-  },
-  {
-    "identifier": "dfd",
-    "color": [
-      211,
       255,
+      0,
       211
     ],
-    "parent_id": "lpq"
+    "parent_id": null
   }
 ]
