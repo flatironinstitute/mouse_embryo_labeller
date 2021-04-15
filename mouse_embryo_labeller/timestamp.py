@@ -16,6 +16,7 @@ class Timestamp:
         self.unique_labels = None
         self.label_to_nucleus = None
         self.r3d_truncated = None
+        self.r3d_max_intensity = None
         self.l3d_truncated = None
         self.l3d_extruded = None
 
@@ -23,11 +24,12 @@ class Timestamp:
         l = self.l3d_truncated
         r = self.r3d_truncated
         e = self.l3d_extruded
+        m = self.r3d_max_intensity
         u = np.array(list(self.unique_labels), dtype=np.int)
-        for a in (l, r, e, u):
-            assert a is not None, "Timestamp not fully processed for storage " + repr(self.identifier)
+        for (i, a) in enumerate([l, r, e, u, m]):
+            assert a is not None, "Timestamp not fully processed for storage " + repr((i, self.identifier))
         f = open(to_path, "wb")
-        np.savez_compressed(f, l3d_truncated=l, r3d_truncated=r, l3d_extruded=e, unique_labels=u)
+        np.savez_compressed(f, l3d_truncated=l, r3d_truncated=r, l3d_extruded=e, r3d_max_intensity=m, unique_labels=u)
         f.close()
 
     def load_truncated_arrays(self, from_path):
@@ -36,6 +38,7 @@ class Timestamp:
         self.l3d_extruded = L["l3d_extruded"]
         self.l3d_truncated = L["l3d_truncated"]
         self.r3d_truncated = L["r3d_truncated"]
+        self.r3d_max_intensity = L["r3d_max_intensity"]
         self.unique_labels = set(L["unique_labels"].tolist())
         f.close()
 
@@ -43,16 +46,23 @@ class Timestamp:
         return len(self.l3d_truncated)
 
     def extrude_labels(self):
-        "extrude nonzero labels along the z axis"
+        "extrude nonzero labels along the z axis and compute max intensity extrusion"
         l = self.l3d_truncated
+        r = self.r3d_truncated
         assert l is not None, "labels must be loaded and truncated before extrusion: " + repr(self.identifier)
         extruded = np.zeros(l.shape, dtype=l.dtype)
+        max_intensity = np.zeros(r.shape, dtype=r.dtype)
         mask = extruded[0]
+        max_mask = r[0]
         for i in range(len(extruded)):
             layer = l[i]
             nz = (layer != 0)
             mask = np.choose(nz, [mask, layer])
+            max_mask = np.maximum(r[i], max_mask)
             extruded[i] = mask
+            max_intensity[i] = max_mask
+        assert extruded.shape == max_intensity.shape, "shapes should match: " + repr((extruded.shape, max_intensity.shape))
+        self.r3d_max_intensity = max_intensity
         self.l3d_extruded = extruded
 
     def load_mapping(self, from_path, nucleus_collection=None):
@@ -97,12 +107,16 @@ class Timestamp:
         result[0] = zero_map
         return result
 
-    def raster_slice(self, slice_i):
-        return self.r3d_truncated[slice_i]
+    def raster_slice(self, slice_i, extruded=False):
+        if extruded:
+            r = self.r3d_max_intensity
+        else:
+            r = self.r3d_truncated
+        return r[slice_i]
 
     def raster_slice_with_boundary(self, slice_i, extruded=False, colorize=True, blur=True, normalized=True):
         # xxx could refactor pasted code...
-        r_slice = self.raster_slice(slice_i)
+        r_slice = self.raster_slice(slice_i, extruded)
         if blur:
             sigma = 1
             blurred_image = gaussian_filter(r_slice, sigma=sigma)
@@ -129,9 +143,10 @@ class Timestamp:
             a = self.l3d_extruded
         return a[layer, i, j]
 
-    def get_intensity(self, layer, i, j):
-        a = self.r3d_truncated
-        return a[layer, i, j]
+    def get_intensity(self, layer, i, j, extruded):
+        #a = self.r3d_truncated
+        r = self.raster_slice(layer, extruded)
+        return r[i, j]
 
     def colorized_label_slice(self, color_mapping_array, slice_i, extruded=False, outline=True):
         a = self.l3d_truncated
@@ -168,8 +183,14 @@ class Timestamp:
         }
 
     def get_truncated_arrays(self, test_array=None):
+        # disabled for now
         r = self.raster3d
         l = self.labels3d
+        self.l3d_truncated = l
+        self.r3d_truncated = r
+        self.extrude_labels()
+        return
+        """
         if test_array is None:
             test_array = l
         (nzI, nzJ, nzK) = np.nonzero(test_array)
@@ -178,7 +199,7 @@ class Timestamp:
         mK, MK = nzK.min(), nzK.max()
         self.l3d_truncated = l[mI:MI, mJ:MJ, mK:MK]
         self.r3d_truncated = r[mI:MI, mJ:MJ, mK:MK]
-        self.extrude_labels()
+        self.extrude_labels()"""
 
     def add_source_arrays(self, raster3d, labels3d):
         self.raster3d = raster3d

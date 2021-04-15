@@ -14,8 +14,8 @@ EXAMPLE_FOLDER = "../example_data/"
 def preprocess_sample_data(
     stride=4, 
     destination=EXAMPLE_FOLDER,
-    labels_pattern="/Users/awatters/misc/LisaBrown/mouse-embryo-nuclei/H9/H9_%s_Labels.tiff",
-    intensities_pattern="/Users/awatters/misc/LisaBrown/mouse-embryo-nuclei/H9OriginalIntensityImages/klbOut_CH1_%06d.klb",
+    labels_pattern="/Users/awatters/misc/lisa2/mouse-embryo-nuclei/H9/H9_%s_Labels.tiff",
+    intensities_pattern="/Users/awatters/misc/lisa2/mouse-embryo-nuclei/H9OriginalIntensityImages/klbOut_CH1_%06d.klb",
     sanity_limit=10000,
     ):
     "preprocess the example H9 data, subsample j and k dimensions by stride"

@@ -299,7 +299,8 @@ class VizController:
         layer = self.layers_slider.value
         #tsid = self.selected_timestamp_id
         #prefix = repr((y, x)) + ": "
-        intensity = ts.get_intensity(layer, y, x)
+        extruded = self.extruded_checkbox.value
+        intensity = ts.get_intensity(layer, y, x, extruded)
         return "%s,%s : %s" % (y, x, intensity)
 
     def label_image_hover(self, x, y, array):
@@ -394,7 +395,7 @@ class VizController:
             self.info.value = "No previous timestamp: " + repr(self.selected_timestamp_id)
             return
         self.selected_timestamp_id = prv
-        self.info.vaklue = "previous timestamp: " + repr(prv)
+        self.info.value = "previous timestamp: " + repr(prv)
         self.redraw()
 
     def previous_next(self):
