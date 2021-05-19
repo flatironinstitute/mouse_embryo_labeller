@@ -58,11 +58,24 @@ class VizController:
         self.nucleus_collection = nucleus_collection
         self.selected_timestamp_id = self.timestamp_collection.first_id()
         self.selected_nucleus_id = None
+        self.last_timestamp = None
         ts = self.timestamp()
         self.selected_layer = ts.nlayers() - 1
 
+    switch_count = 0
+
     def timestamp(self):
-        return self.timestamp_collection.get_timestamp(self.selected_timestamp_id)
+        last = self.last_timestamp
+        current = self.timestamp_collection.get_timestamp(self.selected_timestamp_id)
+        if last is not current:
+            # clear the old timestamp (don't waste memory) amd load the new one
+            #print("SWITCHING", repr([last, current]))
+            if last is not None:
+                last.reset_all_arrays()
+            current.load_truncated_arrays()
+            self.switch_count += 1
+        self.last_timestamp = current
+        return current
 
     def get_nucleus(self):
         nid = self.selected_nucleus_id

@@ -11,16 +11,28 @@ class Timestamp:
 
     def __init__(self, identifier):
         self.identifier = identifier
-        self.raster3d = None
-        self.labels3d = None
         self.unique_labels = None
         self.label_to_nucleus = None
+        self.manifest = None
+        self.array_path = None
+        self.reset_all_arrays()
+
+    def reset_all_arrays(self):
+        self.raster3d = None
+        self.labels3d = None
         self.r3d_truncated = None
         self.r3d_max_intensity = None
         self.l3d_truncated = None
         self.l3d_extruded = None
 
-    def save_truncated_arrays(self, to_path):
+    def __repr__(self):
+        return "Timestamp(%s)" % self.identifier
+
+    def save_array_path(self, path):
+        #print(self.identifier, "array path", path)
+        self.array_path = path
+
+    def save_truncated_arrays(self, to_path, discard=True):
         l = self.l3d_truncated
         r = self.r3d_truncated
         e = self.l3d_extruded
@@ -31,8 +43,14 @@ class Timestamp:
         f = open(to_path, "wb")
         np.savez_compressed(f, l3d_truncated=l, r3d_truncated=r, l3d_extruded=e, r3d_max_intensity=m, unique_labels=u)
         f.close()
+        if discard:
+            # discard the arrays to prevent leaking memory problem
+            self.reset_all_arrays()
 
-    def load_truncated_arrays(self, from_path):
+    def load_truncated_arrays(self, from_path=None):
+        if from_path is None:
+            from_path = self.array_path
+        #print(self.identifier, "loading arrays", repr(from_path))
         f = open(from_path, "rb")
         L = np.load(f, allow_pickle=True)
         self.l3d_extruded = L["l3d_extruded"]
@@ -183,23 +201,13 @@ class Timestamp:
         }
 
     def get_truncated_arrays(self, test_array=None):
-        # disabled for now
+        # test_array not used for now
         r = self.raster3d
         l = self.labels3d
         self.l3d_truncated = l
         self.r3d_truncated = r
         self.extrude_labels()
         return
-        """
-        if test_array is None:
-            test_array = l
-        (nzI, nzJ, nzK) = np.nonzero(test_array)
-        mI, MI = nzI.min(), nzI.max()
-        mJ, MJ = nzJ.min(), nzJ.max()
-        mK, MK = nzK.min(), nzK.max()
-        self.l3d_truncated = l[mI:MI, mJ:MJ, mK:MK]
-        self.r3d_truncated = r[mI:MI, mJ:MJ, mK:MK]
-        self.extrude_labels()"""
 
     def add_source_arrays(self, raster3d, labels3d):
         self.raster3d = raster3d

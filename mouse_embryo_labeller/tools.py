@@ -26,6 +26,9 @@ def preprocess_sample_data(
         print ("Install problem fix at: https://github.com/bhoeckendorf/pyklb/issues/3")
         raise
     tsc = timestamp_collection.TimestampCollection()
+    ts_pattern = destination + "/ts%s"
+    json_pattern = ts_pattern + ".json"
+    npz_pattern = ts_pattern + ".npz"
     for i in range(sanity_limit):
         labels_path = labels_pattern % i
         intensities_path = intensities_pattern % i
@@ -50,9 +53,21 @@ def preprocess_sample_data(
         ts = timestamp.Timestamp(i)
         ts.add_source_arrays(s_img, s_labels)
         tsc.add_timestamp(ts)
-    print("now truncating all time slices...")
-    tsc.truncate_all()
-    ts_pattern = destination + "/ts%s"
+        # store and discard the timestamp arrays to prevent memory leakage.
+        ts.get_truncated_arrays(test_array=None)
+        json_path = json_pattern % ts.identifier
+        npz_path = npz_pattern % ts.identifier
+        ts.save_mapping(json_path)
+        ts.save_truncated_arrays(npz_path, discard=True)
+        # store the manifest for this timestamp
+        ts.manifest = {
+                "identity": ts.identifier,
+                "json_path": timestamp_collection.filename_only(json_path),
+                "npz_path": timestamp_collection.filename_only(npz_path),
+            }
+    #print("now truncating all time slices...")
+    #tsc.truncate_all()
+    #ts_pattern = destination + "/ts%s"
     print("storing timestamps with pattern", repr(ts_pattern))
     tsc.store_all(ts_pattern)
     print("Creating empty nucleus collection...")

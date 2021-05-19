@@ -41,6 +41,7 @@ class TimestampCollection:
             nxt = seq[i + 1]
         return (prv, nxt)
 
+    """
     def truncate_all(self):
         ids = self.id_sequence
         assert len(ids) > 0, "nothing to truncate."
@@ -53,24 +54,26 @@ class TimestampCollection:
                 maxlabels = np.maximum(r, maxlabels)
         for (identity, ts) in self.id_to_timestamp.items():
             ts.get_truncated_arrays(maxlabels)
+            """
             
     def store_all(self, pattern, verbose=True):
         manifest = []
-        json_pattern = pattern + ".json"
-        npz_pattern = pattern + ".npz"
+        #json_pattern = pattern + ".json"
+        #npz_pattern = pattern + ".npz"
         for (identity, ts) in self.id_to_timestamp.items():
-            json_path = json_pattern % identity
-            npz_path = npz_pattern % identity
-            entry = {
-                "identity": identity,
-                "json_path": filename_only(json_path),
-                "npz_path": filename_only(npz_path),
-            }
+            #json_path = json_pattern % identity
+            #npz_path = npz_pattern % identity
+            #entry = {
+            #    "identity": identity,
+            #    "json_path": filename_only(json_path),
+            #    "npz_path": filename_only(npz_path),
+            #}
+            entry = ts.manifest
             manifest.append(entry)
-            if verbose:
-                print ("storing ts", (json_path, npz_path))
-            ts.save_mapping(json_path)
-            ts.save_truncated_arrays(npz_path)
+            #if verbose:
+            #    print ("storing ts", (json_path, npz_path))
+            #ts.save_mapping(json_path)
+            #ts.save_truncated_arrays(npz_path)
         manifest_path = manifest_file_path(pattern)
         if verbose:
             print("   Storing manifest", manifest_path, len(manifest))
@@ -91,7 +94,10 @@ def load_preprocessed_timestamps(from_folder, nucleus_collection, filename="ts_m
     result = TimestampCollection()
     for description in manifest:
         ts = timestamp.Timestamp(description["identity"])
-        ts.load_truncated_arrays(expand(description["npz_path"]))
+        # don't hog memory -- load arrays only on demand!
+        #ts.load_truncated_arrays(expand(description["npz_path"]))
+        ts.save_array_path(expand(description["npz_path"]))
+        #ts.load_truncated_arrays(expand(description["npz_path"]))
         ts.load_mapping(expand(description["json_path"]), nucleus_collection)
         result.add_timestamp(ts)
     return result
