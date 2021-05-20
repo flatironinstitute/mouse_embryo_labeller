@@ -57,10 +57,14 @@ class VizController:
         self.timestamp_collection = timestamp_collection
         self.nucleus_collection = nucleus_collection
         self.selected_timestamp_id = self.timestamp_collection.first_id()
-        self.selected_nucleus_id = None
+        #self.selected_nucleus_id = None
         self.last_timestamp = None
         ts = self.timestamp()
         self.selected_layer = ts.nlayers() - 1
+        self.nucleus_info = widgets.HTML(value="Please select or create a nucleus.")
+        #self.set_nucleus_id(None)  # nope, not initialized yet
+        self.selected_nucleus_id = None
+        nucleus_collection.set_controller(self)
 
     switch_count = 0
 
@@ -89,12 +93,20 @@ class VizController:
         self.side = side
         ts = self.timestamp()
 
-        self.info = widgets.HTML(value="Nucleus Labeller Tool.")
-        self.nucleus_info = widgets.HTML(value="Please select or create an nucleus.")
+        self.info = widgets.HTML(value="Nucleus <br> Labeller <br> Tool.")
+        #self.nucleus_info = widgets.HTML(value="Please select or create an nucleus.") # moved to __init__
         self.delete_button = widgets.Button(description="DELETE", disabled=True)
         self.delete_button.on_click(self.delete_click)
         info_area1 = widgets.HBox([self.info], layout=widgets.Layout(border='solid'))
-        info_area = widgets.HBox([info_area1, self.nucleus_info, self.delete_button])
+        reparent_assembly = self.nucleus_collection.reparent_assembly()
+        join_assembly = self.nucleus_collection.join_assembly()
+        info_area = widgets.HBox([
+            info_area1, 
+            self.nucleus_info, 
+            self.delete_button,
+            reparent_assembly,
+            join_assembly, 
+            ])
 
         self.prev_button = widgets.Button(description="< Prev")
         self.prev_button.on_click(self.go_previous)
@@ -246,7 +258,8 @@ class VizController:
         del_id = self.selected_nucleus_id
         n = self.get_nucleus()
         assert n is not None, "can't delete no nucleus found " + repr(del_id)
-        self.selected_nucleus_id = None
+        #self.selected_nucleus_id = None
+        self.set_nucleus_id(None)
         self.timestamp_collection.forget_nucleus(n, self)
         self.nucleus_collection.forget_nucleus_id(del_id, self.folder)
         self.nucleus_collection.set_widget_options(callback=None, selected=None)
@@ -258,6 +271,8 @@ class VizController:
             self.selected_nucleus_id = identifier
         else:
             self.selected_nucleus_id = None
+        self.nucleus_collection.set_selected_nucleus(self.selected_nucleus_id)
+        self.nucleus_collection.set_widget_options(callback=None, selected=self.selected_nucleus_id)
         self.show_nucleus_selection()
 
     def show_nucleus_selection(self):
@@ -350,7 +365,8 @@ class VizController:
         self.nucleus_collection.save_json(self.folder)
         # only switch to nucleus if no parent
         if parent_id is None:
-            self.selected_nucleus_id = identifier
+            #self.selected_nucleus_id = identifier
+            self.set_nucleus_id(identifier)
         self.nucleus_collection.set_widget_options(callback=None, selected=identifier)
         self.show_nucleus_selection()
         self.nucleus_name_input.value = ""

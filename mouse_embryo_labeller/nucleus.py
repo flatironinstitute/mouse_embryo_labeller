@@ -16,6 +16,9 @@ class Nucleus:
     def html_color(self):
         return "rgb(%s,%s,%s)" % tuple(self.color)
 
+    def reparent(self, new_parent_id):
+        self.parent_id = new_parent_id
+
     def html_info(self, nucleus_collection):
         i = self.identifier
         pid = self.parent_id
