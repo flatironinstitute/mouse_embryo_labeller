@@ -31,6 +31,13 @@ class TimestampCollection:
                 save_path = controller.ts_assignment_path(ts_id)
                 ts.save_mapping(save_path)
 
+    def relabel(self, old_nucleus, replacement_nucleus, controller):
+        for (ts_id, ts) in self.id_to_timestamp.items():
+            found = ts.relabel(old_nucleus, replacement_nucleus)
+            if found:
+                save_path = controller.ts_assignment_path(ts_id)
+                ts.save_mapping(save_path)
+
     def previous_next(self, ts_id):
         prv = nxt = None
         seq = self.id_sequence

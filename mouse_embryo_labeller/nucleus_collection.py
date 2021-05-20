@@ -119,7 +119,7 @@ class NucleusCollection:
                 if (selected) {
                     element.info.html("at " + selected + " of " + ln1);
                 } else {
-                    element.info.html("embryos: " + ln1);
+                    element.info.html("nucleii: " + ln1);
                 }
             };
         """, height=height, width=width)
@@ -147,6 +147,13 @@ class NucleusCollection:
         self.reparent_dropdown.options = drop_down_option
         self.reparent_dropdown.value = none_option
         self.reparent_button.disabled = (nucleus is None)
+
+    def join_click(self, button):
+        join_from_id = self.join_dropdown.value
+        join_to_id = self.selected_id
+        valid_ids = self.id_to_nucleus
+        assert (join_from_id in valid_ids) and (join_to_id in valid_ids), "Invalid ids: " + repr([join_from_id, join_to_id])
+        self.controller.relabel_and_delete(join_from_id, join_to_id)
 
     def reparent_click(self, button):
         new_parent = self.reparent_dropdown.value
@@ -199,7 +206,7 @@ class NucleusCollection:
         pass # do nothing until user presses the reparent button
 
     def join_assembly(self):
-        self.join_info = widgets.HTML(value="Join with nucleus")
+        self.join_info = widgets.HTML(value="Subsume nucleus")
         self.join_dropdown = widgets.Dropdown(
             options=['NONE'],
             value='NONE',
@@ -209,6 +216,7 @@ class NucleusCollection:
             )
         self.join_dropdown.observe(self.join_select, names="value")
         self.join_button = widgets.Button(description="Join", disabled=True)
+        self.join_button.on_click(self.join_click)
         assembly = widgets.VBox([
             self.join_info,
             self.join_dropdown,

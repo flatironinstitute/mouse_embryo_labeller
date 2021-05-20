@@ -266,6 +266,15 @@ class VizController:
         self.redraw()
         self.info.value = "DELETED " + repr(del_id)
 
+    def relabel_and_delete(self, old_id, replacement_id):
+        old_nucleus = self.nucleus_collection.get_nucleus(old_id)
+        replacement_nucleus = self.nucleus_collection.get_nucleus(replacement_id)
+        self.timestamp_collection.relabel(old_nucleus, replacement_nucleus, self)
+        self.nucleus_collection.forget_nucleus_id(old_id, self.folder)
+        self.nucleus_collection.set_widget_options(callback=None, selected=None)
+        self.redraw()
+        self.info.value = "JOINED " + repr(old_id) + ">>" + repr(replacement_id)
+
     def set_nucleus_id(self, identifier):
         if self.nucleus_collection.get_nucleus(identifier, check=False):
             self.selected_nucleus_id = identifier

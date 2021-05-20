@@ -108,6 +108,18 @@ class Timestamp:
             self.label_to_nucleus = {l: n for (l, n) in l2n.items() if n is not nucleus}
         return found
 
+    def relabel(self, old_nucleus, replacement_nucleus):
+        l2n = self.label_to_nucleus
+        found = (old_nucleus in list(l2n.values()))
+        if found:
+            new_l2n = {}
+            for (label, nucleus) in l2n.items():
+                if nucleus is old_nucleus:
+                    nucleus = replacement_nucleus
+                new_l2n[label] = nucleus
+            self.label_to_nucleus = new_l2n
+        return found
+
     def get_nucleus(self, label):
         return self.label_to_nucleus.get(label)
 
