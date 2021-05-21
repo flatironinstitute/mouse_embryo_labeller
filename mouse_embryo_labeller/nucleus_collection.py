@@ -4,7 +4,7 @@ import ipywidgets as widgets
 import jp_proxy_widget
 import json
 import os
-from mouse_embryo_labeller import nucleus
+from mouse_embryo_labeller import nucleus, color_list
 import ipywidgets as widgets
 
 DEFAULT_FILENAME = "nuclei.json"
@@ -62,6 +62,7 @@ class NucleusCollection:
         if to_filename is None:
             to_filename = self.filename
         to_path = os.path.join(to_folder, to_filename)
+        self.manifest_path = to_path
         f = open(to_path, "w")
         json.dump(json_ob, f, indent=2)
         f.close()
@@ -86,6 +87,15 @@ class NucleusCollection:
         if n is None and check:
             assert n is not None, "No nucleus with identifier: " + repr(identifier)
         return n
+
+    def get_or_make_nucleus(self, identifier):
+        result = self.get_nucleus(identifier, check=False)
+        if result is None:
+            index = len(self.id_to_nucleus)
+            color = color_list.indexed_color(index)  # maybe should look for color not in use. xxx
+            result = nucleus.Nucleus(identifier, color)
+            self.add_nucleus(result)
+        return result
 
     def create_widget(self, height=500, width=100, callback=None):
         widget = jp_proxy_widget.JSProxyWidget()
