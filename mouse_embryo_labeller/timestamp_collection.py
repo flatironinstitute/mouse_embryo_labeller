@@ -82,6 +82,7 @@ class TimestampCollection:
             #ts.save_mapping(json_path)
             #ts.save_truncated_arrays(npz_path)
         manifest_path = manifest_file_path(pattern)
+        self.manifest_path = manifest_path
         if verbose:
             print("   Storing manifest", manifest_path, len(manifest))
         f = open(manifest_path, "w")
