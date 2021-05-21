@@ -6,6 +6,10 @@ def rgbhtml(rgb):
 def colordiv(rgb):
     return '<div style="background-color:%s">%s</div>' % (rgbhtml(rgb), rgb)
 
+def indexed_color(i):
+    i = i % len(color_arrays)
+    return color_arrays[i]
+
 color_arrays = [
     [0, 0, 255],
     [255, 0, 0],
