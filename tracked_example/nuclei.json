@@ -1,0 +1,1577 @@
+[
+  {
+    "identifier": "TR0",
+    "color": [
+      0,
+      0,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR1",
+    "color": [
+      255,
+      0,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR2",
+    "color": [
+      0,
+      255,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR3",
+    "color": [
+      255,
+      26,
+      184
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR4",
+    "color": [
+      255,
+      211,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR5",
+    "color": [
+      0,
+      131,
+      246
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR6",
+    "color": [
+      0,
+      140,
+      70
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR7",
+    "color": [
+      167,
+      96,
+      61
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR8",
+    "color": [
+      79,
+      0,
+      105
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR9",
+    "color": [
+      0,
+      255,
+      246
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR10",
+    "color": [
+      61,
+      123,
+      140
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR11",
+    "color": [
+      237,
+      167,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR12",
+    "color": [
+      211,
+      255,
+      149
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR13",
+    "color": [
+      184,
+      79,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR14",
+    "color": [
+      228,
+      26,
+      87
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR15",
+    "color": [
+      131,
+      131,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR16",
+    "color": [
+      0,
+      255,
+      149
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR17",
+    "color": [
+      96,
+      0,
+      43
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR18",
+    "color": [
+      246,
+      131,
+      17
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR19",
+    "color": [
+      202,
+      255,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR20",
+    "color": [
+      43,
+      61,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR21",
+    "color": [
+      0,
+      52,
+      193
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR22",
+    "color": [
+      255,
+      202,
+      131
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR23",
+    "color": [
+      0,
+      43,
+      96
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR24",
+    "color": [
+      158,
+      114,
+      140
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR25",
+    "color": [
+      79,
+      184,
+      17
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR26",
+    "color": [
+      158,
+      193,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR27",
+    "color": [
+      149,
+      158,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR28",
+    "color": [
+      255,
+      123,
+      175
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR29",
+    "color": [
+      158,
+      8,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR30",
+    "color": [
+      255,
+      184,
+      184
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR31",
+    "color": [
+      131,
+      96,
+      202
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR32",
+    "color": [
+      158,
+      0,
+      114
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR33",
+    "color": [
+      131,
+      219,
+      167
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR34",
+    "color": [
+      255,
+      0,
+      246
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR35",
+    "color": [
+      0,
+      211,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR36",
+    "color": [
+      255,
+      114,
+      87
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR37",
+    "color": [
+      87,
+      61,
+      52
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR38",
+    "color": [
+      0,
+      61,
+      52
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR39",
+    "color": [
+      219,
+      96,
+      219
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR40",
+    "color": [
+      96,
+      114,
+      175
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR41",
+    "color": [
+      184,
+      202,
+      43
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR42",
+    "color": [
+      17,
+      175,
+      167
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR43",
+    "color": [
+      96,
+      17,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR44",
+    "color": [
+      43,
+      0,
+      43
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR45",
+    "color": [
+      87,
+      0,
+      202
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR46",
+    "color": [
+      149,
+      193,
+      202
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR47",
+    "color": [
+      211,
+      158,
+      35
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR48",
+    "color": [
+      131,
+      175,
+      87
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR49",
+    "color": [
+      228,
+      237,
+      184
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR50",
+    "color": [
+      246,
+      211,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR51",
+    "color": [
+      184,
+      79,
+      96
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR52",
+    "color": [
+      140,
+      8,
+      167
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR53",
+    "color": [
+      105,
+      79,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR54",
+    "color": [
+      0,
+      61,
+      158
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR55",
+    "color": [
+      123,
+      61,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR56",
+    "color": [
+      61,
+      123,
+      96
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR57",
+    "color": [
+      167,
+      255,
+      96
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR58",
+    "color": [
+      0,
+      149,
+      211
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR59",
+    "color": [
+      61,
+      114,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR60",
+    "color": [
+      175,
+      87,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR61",
+    "color": [
+      219,
+      0,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR62",
+    "color": [
+      158,
+      158,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR63",
+    "color": [
+      79,
+      70,
+      96
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR64",
+    "color": [
+      167,
+      255,
+      246
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR65",
+    "color": [
+      228,
+      0,
+      43
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR66",
+    "color": [
+      114,
+      219,
+      114
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR67",
+    "color": [
+      255,
+      237,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR68",
+    "color": [
+      175,
+      140,
+      70
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR69",
+    "color": [
+      96,
+      114,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR70",
+    "color": [
+      219,
+      70,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR71",
+    "color": [
+      0,
+      0,
+      114
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR72",
+    "color": [
+      8,
+      0,
+      70
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR73",
+    "color": [
+      52,
+      237,
+      79
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR74",
+    "color": [
+      43,
+      0,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR75",
+    "color": [
+      167,
+      0,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR76",
+    "color": [
+      0,
+      246,
+      193
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR77",
+    "color": [
+      158,
+      0,
+      43
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR78",
+    "color": [
+      0,
+      61,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR79",
+    "color": [
+      246,
+      158,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR80",
+    "color": [
+      105,
+      114,
+      52
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR81",
+    "color": [
+      255,
+      255,
+      70
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR82",
+    "color": [
+      193,
+      175,
+      175
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR83",
+    "color": [
+      114,
+      114,
+      114
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR84",
+    "color": [
+      193,
+      105,
+      167
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR85",
+    "color": [
+      0,
+      87,
+      35
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR86",
+    "color": [
+      255,
+      131,
+      140
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR87",
+    "color": [
+      175,
+      131,
+      114
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR88",
+    "color": [
+      0,
+      70,
+      96
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR89",
+    "color": [
+      140,
+      255,
+      17
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR90",
+    "color": [
+      175,
+      140,
+      202
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR91",
+    "color": [
+      114,
+      79,
+      246
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR92",
+    "color": [
+      114,
+      158,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR93",
+    "color": [
+      211,
+      8,
+      193
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR94",
+    "color": [
+      158,
+      0,
+      79
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR95",
+    "color": [
+      193,
+      123,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR96",
+    "color": [
+      140,
+      149,
+      184
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR97",
+    "color": [
+      246,
+      167,
+      211
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR98",
+    "color": [
+      35,
+      35,
+      8
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR99",
+    "color": [
+      255,
+      105,
+      202
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR100",
+    "color": [
+      0,
+      140,
+      17
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR101",
+    "color": [
+      255,
+      167,
+      87
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR102",
+    "color": [
+      228,
+      193,
+      158
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR103",
+    "color": [
+      0,
+      17,
+      43
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR104",
+    "color": [
+      193,
+      184,
+      87
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR105",
+    "color": [
+      0,
+      193,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR106",
+    "color": [
+      70,
+      43,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR107",
+    "color": [
+      123,
+      61,
+      87
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR108",
+    "color": [
+      158,
+      70,
+      167
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR109",
+    "color": [
+      79,
+      87,
+      61
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR110",
+    "color": [
+      105,
+      52,
+      184
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR111",
+    "color": [
+      114,
+      175,
+      149
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR112",
+    "color": [
+      255,
+      175,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR113",
+    "color": [
+      79,
+      52,
+      131
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR114",
+    "color": [
+      184,
+      70,
+      52
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR115",
+    "color": [
+      96,
+      167,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR116",
+    "color": [
+      211,
+      131,
+      149
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR117",
+    "color": [
+      123,
+      96,
+      61
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR118",
+    "color": [
+      105,
+      0,
+      79
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR119",
+    "color": [
+      237,
+      87,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR120",
+    "color": [
+      149,
+      211,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR121",
+    "color": [
+      52,
+      167,
+      193
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR122",
+    "color": [
+      0,
+      0,
+      158
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR123",
+    "color": [
+      123,
+      52,
+      52
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR124",
+    "color": [
+      219,
+      255,
+      105
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR125",
+    "color": [
+      149,
+      211,
+      79
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR126",
+    "color": [
+      131,
+      255,
+      175
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR127",
+    "color": [
+      131,
+      52,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR128",
+    "color": [
+      79,
+      219,
+      228
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR129",
+    "color": [
+      70,
+      35,
+      52
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR130",
+    "color": [
+      0,
+      43,
+      8
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR131",
+    "color": [
+      184,
+      219,
+      193
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR132",
+    "color": [
+      87,
+      140,
+      79
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR133",
+    "color": [
+      158,
+      114,
+      0
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR134",
+    "color": [
+      202,
+      70,
+      131
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR135",
+    "color": [
+      0,
+      193,
+      70
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR136",
+    "color": [
+      202,
+      8,
+      237
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR137",
+    "color": [
+      202,
+      219,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR138",
+    "color": [
+      0,
+      87,
+      167
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR139",
+    "color": [
+      43,
+      167,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR140",
+    "color": [
+      140,
+      219,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR141",
+    "color": [
+      35,
+      43,
+      52
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR142",
+    "color": [
+      193,
+      255,
+      184
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR143",
+    "color": [
+      0,
+      105,
+      158
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR144",
+    "color": [
+      0,
+      87,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR145",
+    "color": [
+      246,
+      87,
+      131
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR146",
+    "color": [
+      219,
+      123,
+      70
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR147",
+    "color": [
+      202,
+      52,
+      167
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR148",
+    "color": [
+      167,
+      202,
+      140
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR149",
+    "color": [
+      79,
+      219,
+      193
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR150",
+    "color": [
+      96,
+      114,
+      211
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR151",
+    "color": [
+      105,
+      35,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR152",
+    "color": [
+      140,
+      8,
+      202
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR153",
+    "color": [
+      219,
+      193,
+      43
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR154",
+    "color": [
+      193,
+      184,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR155",
+    "color": [
+      61,
+      35,
+      87
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR156",
+    "color": [
+      123,
+      96,
+      149
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR157",
+    "color": [
+      184,
+      123,
+      219
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR158",
+    "color": [
+      255,
+      219,
+      211
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR159",
+    "color": [
+      237,
+      87,
+      96
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR160",
+    "color": [
+      202,
+      184,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR161",
+    "color": [
+      61,
+      87,
+      87
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR162",
+    "color": [
+      114,
+      149,
+      149
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR163",
+    "color": [
+      123,
+      255,
+      123
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR164",
+    "color": [
+      149,
+      52,
+      105
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR165",
+    "color": [
+      202,
+      158,
+      184
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR166",
+    "color": [
+      114,
+      61,
+      26
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR167",
+    "color": [
+      149,
+      8,
+      140
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR168",
+    "color": [
+      246,
+      140,
+      219
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR169",
+    "color": [
+      96,
+      175,
+      61
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR170",
+    "color": [
+      255,
+      202,
+      96
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR171",
+    "color": [
+      211,
+      123,
+      114
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR172",
+    "color": [
+      255,
+      237,
+      158
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR173",
+    "color": [
+      202,
+      246,
+      255
+    ],
+    "parent_id": null
+  },
+  {
+    "identifier": "TR174",
+    "color": [
+      87,
+      193,
+      255
+    ],
+    "parent_id": null
+  }
+]
