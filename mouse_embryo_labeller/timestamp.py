@@ -193,6 +193,7 @@ class Timestamp:
         return colors.reshape(sout)
 
     def save_mapping(self, to_path):
+        self.save_path = to_path
         f = open(to_path, "w")
         json_info = self.json_mapping()
         json.dump(json_info, f, indent=2)
