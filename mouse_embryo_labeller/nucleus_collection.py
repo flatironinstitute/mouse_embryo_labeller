@@ -33,6 +33,11 @@ class NucleusCollection:
         for n in nuclei:
             self.add_nucleus(n)
 
+    def valid_new_name(self, name):
+        if name:
+            return name not in self.id_to_nucleus
+        return False
+
     def set_selected_nucleus(self, id):
         if id is not None:
             assert id in self.id_to_nucleus, "no such id in collection: " + repr(id)
