@@ -386,7 +386,9 @@ class VizController:
         self.hide_color_selector()
 
     def nucleus_name_change(self, change):
-        if self.nucleus_name_input.value:
+        value = self.nucleus_name_input.value
+        valid = self.nucleus_collection.valid_new_name(value)
+        if valid:
             self.show_color_selector()
             self.color_selector.reset_color_choice()
             self.info.value = "Please select a color for nucleus."
