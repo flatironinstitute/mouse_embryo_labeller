@@ -1,9 +1,10 @@
 
+from mouse_embryo_labeller.timestamp_collection import load_preprocessed_timestamps
 import ipywidgets as widgets
 from jp_doodle import array_image
 from jp_doodle.data_tables import widen_notebook
 from jp_doodle import color_chooser
-from mouse_embryo_labeller import nucleus
+from mouse_embryo_labeller import nucleus, nucleus_collection
 from mouse_embryo_labeller import color_list
 import os
 
@@ -65,6 +66,18 @@ class VizController:
         #self.set_nucleus_id(None)  # nope, not initialized yet
         self.selected_nucleus_id = None
         nucleus_collection.set_controller(self)
+        self.snapshot_folder = os.path.join(folder, "snapshots")
+        self.reverted_folder = os.path.join(folder, "reverted")
+
+    def reload(self):
+        "Reload data sources from files."
+        self.nucleus_collection = nucleus_collection.collection_from_json(self.folder)
+        self.timestamp_collection = load_preprocessed_timestamps(self.folder, self.nucleus_collection)
+        self.selected_timestamp_id = self.timestamp_collection.first_id()
+        self.last_timestamp = None
+        ts = self.timestamp()
+        self.selected_layer = ts.nlayers() - 1
+        self.selected_nucleus_id = None
 
     switch_count = 0
 
@@ -208,9 +221,18 @@ class VizController:
             height=side * 1.5,
             callback=self.set_nucleus_id,
         )
+        self.snapshot_button = widgets.Button(description="Snapshot", disabled=False)
+        self.snapshot_button.on_click(self.snapshot_click)
+        self.revert_buttton = widgets.Button(description="Revert", disabled=False)  # xxx make disabled "smart"
+        self.revert_buttton.on_click(self.revert_click)
+        right_assembly = widgets.VBox([
+            self.nucleus_chooser,
+            self.snapshot_button,
+            self.revert_buttton,
+        ])
         self.widget = widgets.HBox([
             self.left_assambly,
-            self.nucleus_chooser,
+            right_assembly,
         ])
         # reset colors etc
         self.change_color()
@@ -218,6 +240,42 @@ class VizController:
         # fix up buttons, etcetera
         self.redraw()
         return self.widget
+
+    def revert_click(self, button):
+        from mouse_embryo_labeller import tools
+        import shutil
+        # find the most recent snapshot
+        source_folder = self.snapshot_folder
+        snapshots = list(sorted(os.listdir(source_folder)))
+        if not snapshots:
+            self.info.value = "No snapshots"
+            return
+        most_recent = snapshots[-1]
+        # snap current state to "reverted"
+        self.snapshot_click(button, destination=self.reverted_folder)
+        # move most recent snapshot files to local...
+        from_folder = os.path.join(source_folder, most_recent)
+        to_folder = self.folder
+        tools.copy_json_files(from_folder, to_folder)
+        # move the reverted timestamp to the reverted area
+        reverted_folder = os.path.join(self.reverted_folder, most_recent)
+        shutil.move(from_folder, reverted_folder)
+        # ingest the files...
+        self.reload()
+        # redisplay...
+        self.redraw()
+        self.info.value = "reverted <br> " + repr(most_recent)
+
+    def snapshot_click(self, button, destination=None):
+        from mouse_embryo_labeller import tools
+        timestamp = tools.timestamp_string_now()
+        from_folder = self.folder
+        if destination is None:
+            destination = self.snapshot_folder
+        to_folder = os.path.join(destination, timestamp)
+        os.makedirs(to_folder, exist_ok=True)
+        tools.copy_json_files(from_folder, to_folder)
+        self.info.value = "Snap <br> " + repr(timestamp)
 
     def keypress_callback(self, txt):
         self.info.value = "Key press: " + repr(txt)
