@@ -111,9 +111,20 @@ class VizController:
         #self.nucleus_info = widgets.HTML(value="Please select or create an nucleus.") # moved to __init__
         self.delete_button = widgets.Button(description="DELETE", disabled=True)
         self.delete_button.on_click(self.delete_click)
+        self.change_name_input = widgets.Text(
+            value='',
+            placeholder='identifier',
+            description='Rename',
+            disabled=False
+        )
+        self.change_name_input.observe(self.change_name_change, names='value')
+        self.rename_button = widgets.Button(description="RENAME", disabled=True)
+        self.rename_button.on_click(self.rename_click)
         nucleus_info_area = widgets.VBox([
             self.nucleus_info,
             self.delete_button,
+            self.change_name_input,
+            self.rename_button,
         ])
         info_area1 = widgets.HBox([self.info], layout=widgets.Layout(border='solid'))
         reparent_assembly = self.nucleus_collection.reparent_assembly()
@@ -450,6 +461,30 @@ class VizController:
         self.color_selector.reset_color_choice()
         self.color_display.value = "No color."
         self.hide_color_selector()
+
+    def change_name_change(self, change):
+        value = self.change_name_input.value
+        valid = self.nucleus_collection.valid_new_name(value)
+        if valid and (self.selected_nucleus_id is not None):
+            self.rename_button.disabled = False
+        else:
+            self.rename_button.disabled = True
+
+    def rename_click(self, button):
+        identifier = self.change_name_input.value
+        current_nucleus = self.get_nucleus()
+        old_id = current_nucleus.identifier
+        parent_id = current_nucleus.parent_id
+        color = current_nucleus.color
+        # create a new nucleus track
+        n = nucleus.Nucleus(identifier, color, parent_id)
+        self.nucleus_collection.add_nucleus(n)
+        # subsume the current nucleus
+        self.set_nucleus_id(identifier)
+        self.relabel_and_delete(old_id, identifier)
+        # reset input widgets
+        self.change_name_input.value = ""
+        self.rename_button.disabled = True
 
     def nucleus_name_change(self, change):
         value = self.nucleus_name_input.value
