@@ -139,6 +139,8 @@ class NucleusCollection:
             };
         """, height=height, width=width)
         self.widget = widget
+        self.widget_height = height
+        self.widget_width = width
         self.set_widget_options(callback, widget=widget);
         return widget
 

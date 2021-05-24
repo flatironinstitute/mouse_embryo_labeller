@@ -54,6 +54,7 @@ class VizController:
     """
 
     def __init__(self, folder, timestamp_collection, nucleus_collection):
+        self.widget = None
         self.folder = folder
         self.timestamp_collection = timestamp_collection
         self.nucleus_collection = nucleus_collection
@@ -110,13 +111,16 @@ class VizController:
         #self.nucleus_info = widgets.HTML(value="Please select or create an nucleus.") # moved to __init__
         self.delete_button = widgets.Button(description="DELETE", disabled=True)
         self.delete_button.on_click(self.delete_click)
+        nucleus_info_area = widgets.VBox([
+            self.nucleus_info,
+            self.delete_button,
+        ])
         info_area1 = widgets.HBox([self.info], layout=widgets.Layout(border='solid'))
         reparent_assembly = self.nucleus_collection.reparent_assembly()
         join_assembly = self.nucleus_collection.join_assembly()
         info_area = widgets.HBox([
             info_area1, 
-            self.nucleus_info, 
-            self.delete_button,
+            nucleus_info_area,
             reparent_assembly,
             join_assembly, 
             ])
@@ -211,7 +215,7 @@ class VizController:
             self.new_button,
             #self.nucleus_info,
         ])
-        self.left_assambly = widgets.VBox([
+        self.left_assembly = widgets.VBox([
             info_area,
             top_bar,
             image_assembly,
@@ -225,15 +229,19 @@ class VizController:
         self.snapshot_button.on_click(self.snapshot_click)
         self.revert_buttton = widgets.Button(description="Revert", disabled=False)  # xxx make disabled "smart"
         self.revert_buttton.on_click(self.revert_click)
-        right_assembly = widgets.VBox([
+        self.right_assembly = widgets.VBox([
             self.nucleus_chooser,
             self.snapshot_button,
             self.revert_buttton,
         ])
-        self.widget = widgets.HBox([
-            self.left_assambly,
-            right_assembly,
-        ])
+        widget_children = [
+            self.left_assembly,
+            self.right_assembly,
+        ]
+        if self.widget is None:
+            self.widget = widgets.HBox(widget_children)
+        else:
+            self.widget.children = widget_children
         # reset colors etc
         self.change_color()
         self.hide_color_selector()
@@ -263,7 +271,7 @@ class VizController:
         # ingest the files...
         self.reload()
         # redisplay...
-        self.redraw()
+        self.make_widget()
         self.info.value = "reverted <br> " + repr(most_recent)
 
     def snapshot_click(self, button, destination=None):
