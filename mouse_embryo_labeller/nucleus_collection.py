@@ -198,7 +198,7 @@ class NucleusCollection:
             self.reparent_info,
             self.reparent_dropdown,
             self.reparent_button,
-        ])
+        ], layout=widgets.Layout(border='solid'))
         return assembly
 
     def join_select(self, change):
@@ -236,7 +236,7 @@ class NucleusCollection:
             self.join_info,
             self.join_dropdown,
             self.join_button,
-        ])
+        ], layout=widgets.Layout(border='solid'))
         return assembly
 
 
