@@ -164,7 +164,7 @@ class Timestamp:
         if colorize:
             # make broadcast compatible
             bound = bound.reshape(bound.shape + (1,))
-        r_slice = np.choose(bound, [r_slice, 0])
+        r_slice = np.choose(bound, [r_slice, 255])
         return r_slice
 
     def get_label(self, layer, i, j, extruded=False):
@@ -184,11 +184,20 @@ class Timestamp:
             a = self.l3d_extruded
         assert a is not None, "Data is not loaded and processed: " + repr(self.identifier)
         slice = a[slice_i]
-        if outline:
-            bound = boundary(slice)
-            slice = np.choose(bound, [slice, 0])
+        #if outline:
+        ##    bound = boundary(slice)
+        #    slice = np.choose(bound, [slice, 0])
         s = slice.shape
         colors = color_mapping_array[slice.flatten()]
+        if outline:
+            bound = boundary(slice)
+            white = np.array([255,255,255], dtype=np.int).reshape((1, 3))
+            fbound = bound.flatten()
+            cbound = np.zeros(colors.shape, dtype=np.int)
+            cbound[:] = fbound.reshape(fbound.shape + (1,))
+            print ("cbound", cbound.shape, "white", white.shape, "colors", colors.shape)
+            colors = np.choose(cbound, [colors, white])
+            #colors = np.choose(fbound, [colors, colors])   # debug test
         sout = s + (3,)
         return colors.reshape(sout)
 
