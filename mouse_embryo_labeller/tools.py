@@ -234,5 +234,20 @@ def read_track_table_to_tsnum2label2track(
     assert done, "Not finished reading tracks? " + repr(count)
     return tsnum2label2track
 
+def timestamp_string_now():
+    "sortable millisecond timestamp for file naming."
+    import time
+    return "%015d" % int(time.time() * 1000)
+
+def copy_json_files(from_folder, to_folder):
+    import glob
+    import shutil
+    from_pattern = os.path.join(from_folder, "*.json")
+    from_paths = glob.glob(from_pattern)
+    for from_path in from_paths:
+        fn = os.path.split(from_path)[-1]
+        to_path = os.path.join(to_folder, fn)
+        shutil.copyfile(from_path, to_path)
+
 if __name__=="__main__":
     preprocess_sample_data()
