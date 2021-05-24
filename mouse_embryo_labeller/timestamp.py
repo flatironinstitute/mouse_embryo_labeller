@@ -195,7 +195,7 @@ class Timestamp:
             fbound = bound.flatten()
             cbound = np.zeros(colors.shape, dtype=np.int)
             cbound[:] = fbound.reshape(fbound.shape + (1,))
-            print ("cbound", cbound.shape, "white", white.shape, "colors", colors.shape)
+            #print ("cbound", cbound.shape, "white", white.shape, "colors", colors.shape)
             colors = np.choose(cbound, [colors, white])
             #colors = np.choose(fbound, [colors, colors])   # debug test
         sout = s + (3,)
