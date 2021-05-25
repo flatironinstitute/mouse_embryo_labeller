@@ -599,10 +599,10 @@ class TimeTreeWidget:
         self.frame = self.widget.frame_region(
             minx=0, miny=0, maxx=self.width, maxy=self.height, 
             frame_minx=0, frame_miny=0, frame_maxx=fwidth, frame_maxy=fheight)
-        self.timetamp_highlight = self.frame.frame_rect(0, 1, w=1, h=fheight, fill=False, color="black", name=True)
-        self.nucleus_highlight = self.frame.frame_rect(0, 1, w=fwidth, h=1, fill=False, color="red", name=True)
+        self.timetamp_highlight = self.frame.frame_rect(0, 1, w=0.9, h=fheight, fill=False, color="black", name=True)
+        self.nucleus_highlight = self.frame.frame_rect(0, 1, w=fwidth, h=0.9, fill=False, color="red", name=True)
         self.nucleus_collection.draw_nuclei(self.frame)
-        self.text = self.frame.text(0, fheight+1, "Time tree diagram", name=True)
+        self.text = self.frame.text(0, fheight+1.2, "Time tree diagram", name=True)
         # invisible event rectangle
         self.event_rect = self.frame.frame_rect(0, 1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
         self.event_rect.on("mousemove", self.mouse_move)
