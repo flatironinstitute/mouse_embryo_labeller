@@ -13,6 +13,14 @@ class TimestampCollection:
         self.id_to_timestamp = {}
         self.id_sequence = []
 
+    def width(self):
+        return len(self.id_sequence)
+
+    def assign_indices(self):
+        for (index, id) in enumerate(self.id_sequence):
+            ts = self.id_to_timestamp[id]
+            ts.assign_index(index)
+
     def get_timestamp(self, identifier):
         return self.id_to_timestamp[identifier]
 

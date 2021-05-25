@@ -30,8 +30,81 @@ class NucleusCollection:
         self.id_to_nucleus = {}
         self.selected_id = None
         self.controller = None
+        self.last_position = None
         for n in nuclei:
             self.add_nucleus(n)
+
+    def height(self):
+        return len(self.nuclei)
+
+    def assign_children(self):
+        for n in self.nuclei:
+            n.children = []
+        for n in self.nuclei:
+            pid = n.parent_id
+            if pid is not None:
+                p = self.id_to_nucleus.get(pid)
+                if p is not None:
+                    p.children.append(n.identifier)
+                else:
+                    print("Warning: invalid parent id removed: " + repr((n.identifier, pid)))
+                    n.parent_id = None  # patch the data
+                
+    def assign_widths(self):
+        # children must be assigned
+        # also test for circularity
+        unassigned = set(self.id_to_nucleus.keys())
+        for n in self.nuclei:
+            n.width = None
+        while unassigned:
+            progress = False
+            for nid in list(unassigned):
+                ok = True
+                width = 1
+                node = self.id_to_nucleus[nid]
+                for cid in node.children:
+                    c = self.id_to_nucleus.get(cid)
+                    if c.width is not None:
+                        width = width + c.width
+                    else:
+                        ok = False
+                        break
+                if ok:
+                    node.width = width
+                    unassigned.remove(node.identifier)
+                    progress = True
+            assert progress, "Circular node parent relationship: " + repr(list(unassigned))
+
+    def assign_positions(self):
+        # after assign_width
+        cursor = 0
+        for n in self.nuclei:
+            if n.parent_id is None:
+                cursor = self.assign_position(n, cursor)
+        self.last_position = cursor
+
+    def assign_position(self, nucleus, cursor):
+        children = nucleus.children
+        # put the nucleus between multiple children
+        if children:
+            child0 = self.id_to_nucleus[children[0]]
+            cursor = self.assign_position(child0, cursor)
+        nucleus.position = cursor + 1
+        cursor = nucleus.position
+        for cid in children[1:]:
+            child = self.id_to_nucleus[cid]
+            cursor = self.assign_position(child, cursor)
+        nucleus.last_descendent_position = cursor
+        return cursor
+
+    def draw_nuclei(self, on_frame, labels=True):
+        for n in self.nuclei:
+            n.draw_rectangles(on_frame)
+        for n in self.nuclei:
+            n.draw_link(on_frame, self)
+        if labels:
+            for n in self.nuclei:
+                n.draw_label(on_frame)
 
     def valid_new_name(self, name):
         if name:
@@ -50,6 +123,7 @@ class NucleusCollection:
         return self.get_nucleus(id)
 
     def reparent_selected_nucleus(self, new_parent_id):
+        assert new_parent_id in self.id_to_nucleus, "bad parent id: " + repr(new_parent_id)
         selected = self.get_selected_nucleus()
         assert selected is not None
         selected.reparent(new_parent_id)
@@ -82,6 +156,10 @@ class NucleusCollection:
     def forget_nucleus_id(self, nid, save_folder):
         id2n = self.id_to_nucleus
         ns = self.nuclei
+        # unparent any nuclei with this nucleus as a parent
+        for n in ns:
+            if n.parent_id == nid:
+                n.parent_id = None
         delete_n = id2n[nid]
         self.id_to_nucleus = {identifier: nucleus for (identifier, nucleus) in id2n.items() if identifier != nid}
         self.nuclei = [n for n in ns if n is not delete_n]

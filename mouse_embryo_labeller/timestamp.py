@@ -17,6 +17,10 @@ class Timestamp:
         self.array_path = None
         self.reset_all_arrays()
 
+    def assign_index(self, index):
+        for nucleus in self.label_to_nucleus.values():
+            nucleus.add_timestamp_index(index)
+
     def reset_all_arrays(self):
         self.raster3d = None
         self.labels3d = None

@@ -574,4 +574,42 @@ class VizController:
         blur = self.blur_checkbox.value
         colorize = self.colorize_checkbox.value
         return ts.raster_slice_with_boundary(layer, extruded, blur=blur, colorize=colorize)
- 
+
+class TimeTreeWidget:
+
+    def __init__(self, nucleus_collection, timestamp_collection):
+        self.nucleus_collection = nucleus_collection
+        self.timestamp_collection = timestamp_collection
+        self.widget = None
+        self.frame = None
+
+    def make_widget(self, width, height):
+        from jp_doodle import dual_canvas
+        self.width = width
+        self.height = height
+        self.widget = dual_canvas.DualCanvasWidget(width=width, height=height)
+        self.make_frame()
+        return self.widget
+
+    def make_frame(self):
+        widget = self.widget
+        widget.reset_canvas()
+        fwidth = self.timestamp_collection.width()
+        fheight = self.nucleus_collection.height()
+        self.frame = self.widget.frame_region(
+            minx=0, miny=0, maxx=self.width, maxy=self.height, 
+            frame_minx=0, frame_miny=0, frame_maxx=fwidth, frame_maxy=fheight)
+        self.timetamp_highlight = self.frame.frame_rect(0, 1, w=1, h=fheight, fill=False, color="black", name=True)
+        self.nucleus_highlight = self.frame.frame_rect(0, 1, w=fwidth, h=1, fill=False, color="red", name=True)
+        self.nucleus_collection.draw_nuclei(self.frame)
+        self.text = self.frame.text(0, fheight+1, "Time tree diagram", name=True)
+        # invisible event rectangle
+        self.event_rect = self.frame.frame_rect(0, 1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
+        self.event_rect.on("mousemove", self.mouse_move)
+        widget.fit()
+
+    def mouse_move(self, event):
+        position = event['model_location']
+        x = int(position["x"])
+        y = int(position["y"])
+        self.text.change(text=repr((x,y)))
