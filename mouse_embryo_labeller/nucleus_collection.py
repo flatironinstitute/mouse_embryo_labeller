@@ -271,7 +271,8 @@ class NucleusCollection:
         self.reparent_selected_nucleus(new_parent)
         # update display
         self.set_widget_options(callback=None, selected=None)
-        self.controller.redraw()
+        #self.controller.redraw()
+        self.controller.make_widget()
         self.controller.info.value = "reparented " + repr(new_parent)
 
     def reparent_assembly(self):

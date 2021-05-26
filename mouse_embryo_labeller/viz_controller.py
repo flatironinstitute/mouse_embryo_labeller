@@ -392,7 +392,8 @@ class VizController:
         self.timestamp_collection.relabel(old_nucleus, replacement_nucleus, self)
         self.nucleus_collection.forget_nucleus_id(old_id, self.folder)
         self.nucleus_collection.set_widget_options(callback=None, selected=None)
-        self.redraw()
+        #self.redraw()
+        self.make_widget()
         self.info.value = "JOINED " + repr(old_id) + ">>" + repr(replacement_id)
 
     def set_nucleus_id(self, identifier):
