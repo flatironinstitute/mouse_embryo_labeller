@@ -219,6 +219,7 @@ class VizController:
                 hover_text_callback=self.raster_hover_text,
             )
             self.left_box = self.raster_display
+        #self.left_box = self.left_box.debugging_display() # DEBUG
         limage = self.label_image(ts)
         self.labelled_image_display = array_image.show_array(
             limage, 
@@ -591,10 +592,12 @@ class VizController:
     def check_highlights(self):
         if self.time_tree is not None:
             self.time_tree.set_highlights(self.selected_timestamp_id, self.selected_nucleus_id)
+            self.time_tree.make_frame()
 
     def set_ids(self, timestamp_id, nucleus_id):
         self.selected_timestamp_id = timestamp_id
-        self.selected_nucleus_id = nucleus_id
+        #self.selected_nucleus_id = nucleus_id
+        self.set_nucleus_id(nucleus_id)
         self.redraw()
 
     def redraw(self):
@@ -644,6 +647,8 @@ class TimeTreeWidget:
         self.width = width
         self.height = height
         self.widget = dual_canvas.DualCanvasWidget(width=width, height=height)
+        self.timestamp_index = 0
+        self.nucleus_position = 1
         self.make_frame()
         return self.widget
 
@@ -655,8 +660,8 @@ class TimeTreeWidget:
         self.frame = self.widget.frame_region(
             minx=0, miny=0, maxx=self.width, maxy=self.height, 
             frame_minx=0, frame_miny=0, frame_maxx=fwidth, frame_maxy=fheight)
-        self.timetamp_highlight = self.frame.frame_rect(0, 1, w=0.9, h=fheight, fill=False, color="black", name=True)
-        self.nucleus_highlight = self.frame.frame_rect(0, 1, w=fwidth, h=0.9, fill=False, color="red", name=True)
+        self.timetamp_highlight = self.frame.frame_rect(self.timestamp_index, 1, w=0.9, h=fheight, fill=False, color="black", name=True)
+        self.nucleus_highlight = self.frame.frame_rect(0, self.nucleus_position, w=fwidth, h=0.9, fill=False, color="red", name=True)
         self.nucleus_collection.draw_nuclei(self.frame)
         self.text = self.frame.text(0, fheight+1.2, "Time tree diagram", name=True)
         # invisible event rectangle
@@ -666,13 +671,16 @@ class TimeTreeWidget:
         widget.fit()
 
     def set_highlights(self, timestamp_id, nucleus_id):
+        ids = (timestamp_id, nucleus_id)
+        self.text.change(text="set_highlignts: " +repr(ids))
         if nucleus_id:
             nucleus = self.nucleus_collection.get_nucleus(nucleus_id)
+            self.nucleus_position = nucleus.position
             self.nucleus_highlight.change(y=nucleus.position, color="blue")
         else:
             self.nucleus_highlight.change(color=INVISIBLE)
-        timestamp_index = self.timestamp_collection.get_index(timestamp_id)
-        self.timetamp_highlight.change(x=timestamp_index, color="red")
+        self.timestamp_index = self.timestamp_collection.get_index(timestamp_id)
+        self.timetamp_highlight.change(x=self.timestamp_index, color="red")
 
     def ids_at(self, x, y):
         timestamp_id = self.timestamp_collection.id_at_index(int(x))

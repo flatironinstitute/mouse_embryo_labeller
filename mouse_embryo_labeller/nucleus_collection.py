@@ -125,6 +125,7 @@ class NucleusCollection:
         if id is not None:
             assert id in self.id_to_nucleus, "no such id in collection: " + repr(id)
         self.selected_id = id
+        self.check_buttons()
 
     def get_selected_nucleus(self):
         id = self.selected_id
@@ -133,7 +134,8 @@ class NucleusCollection:
         return self.get_nucleus(id)
 
     def reparent_selected_nucleus(self, new_parent_id):
-        assert new_parent_id in self.id_to_nucleus, "bad parent id: " + repr(new_parent_id)
+        if new_parent_id is not None:
+            assert new_parent_id in self.id_to_nucleus, "bad parent id: " + repr(new_parent_id)
         selected = self.get_selected_nucleus()
         assert selected is not None
         selected.reparent(new_parent_id)
@@ -292,29 +294,30 @@ class NucleusCollection:
         return assembly
 
     def join_select(self, change):
-        button = self.join_button
-        new = change["new"]
-        if new != self.none_option:
-            if self.selected_id is not None:
-                button.disabled = False
-                return
-            else:
-                #print("no selection")
-                pass
-        else:
-            #print("bad change: ", new)
-            pass
-        # default
-        button.disabled = True
+        none_option = self.none_option
+        self.join_button.disabled = ((change["new"] == none_option) and (self.selected_id is not None))
 
     def reparent_select(self, change):
-        pass # do nothing until user presses the reparent button
+        #self.check_buttons()
+        pass # do nothing -- the reparent button should only be enabled if selected_id is set
+
+    def check_buttons(self):
+        selected = self.selected_id
+        if selected is None:
+            self.reparent_button.disabled = True
+            self.join_button.disabled = True
+        else:
+            none_option = self.none_option
+            # allow reparent to "none"
+            self.reparent_button.disabled = False
+            self.join_button.disabled = (self.join_dropdown.value == none_option)
 
     def join_assembly(self):
         self.join_info = widgets.HTML(value="Subsume nucleus")
+        none_option = self.none_option
         self.join_dropdown = widgets.Dropdown(
-            options=['NONE'],
-            value='NONE',
+            options=[none_option],
+            value=none_option,
             #description='new parent',
             disabled=False,
             layout={'width': "150px"}
