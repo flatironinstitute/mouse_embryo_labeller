@@ -16,6 +16,15 @@ class TimestampCollection:
     def width(self):
         return len(self.id_sequence)
 
+    def get_index(self, ts_id):
+        return self.id_sequence.index(ts_id)
+
+    def id_at_index(self, index):
+        s = self.id_sequence
+        index = max(0, index)
+        index = min(len(s)-1, index)
+        return s[index]
+
     def assign_indices(self):
         for (index, id) in enumerate(self.id_sequence):
             ts = self.id_to_timestamp[id]

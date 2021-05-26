@@ -34,6 +34,16 @@ class NucleusCollection:
         for n in nuclei:
             self.add_nucleus(n)
 
+    def id_at_position(self, position):
+        result = None
+        ns = self.nuclei
+        if ns:
+            result = ns[0].identifier
+            for n in ns:
+                if n.position == position:
+                    result = n.identifier
+        return result
+
     def height(self):
         return len(self.nuclei)
 
@@ -97,7 +107,7 @@ class NucleusCollection:
         nucleus.last_descendent_position = cursor
         return cursor
 
-    def draw_nuclei(self, on_frame, labels=True):
+    def draw_nuclei(self, on_frame, labels=False):
         for n in self.nuclei:
             n.draw_rectangles(on_frame)
         for n in self.nuclei:

@@ -8,6 +8,7 @@ from mouse_embryo_labeller import nucleus, nucleus_collection
 from mouse_embryo_labeller import color_list
 import os
 
+INVISIBLE = "rgba(0,0,0,0)"
 
 ARROWS = [LEFT, UP, RIGHT, DOWN] = "LEFT UP RIGHT DOWN".split()
 
@@ -207,7 +208,7 @@ class VizController:
         if self.show_tree_view:
             self.raster_display = None
             self.calculate_stats()
-            self.time_tree = TimeTreeWidget(self.nucleus_collection, self.timestamp_collection)
+            self.time_tree = TimeTreeWidget(self.nucleus_collection, self.timestamp_collection, self)
             self.left_box = self.time_tree.make_widget(side, side)
         else:
             self.time_tree = None
@@ -401,6 +402,7 @@ class VizController:
         self.nucleus_collection.set_selected_nucleus(self.selected_nucleus_id)
         self.nucleus_collection.set_widget_options(callback=None, selected=self.selected_nucleus_id)
         self.show_nucleus_selection()
+        self.check_highlights()
 
     def show_nucleus_selection(self):
         n = self.get_nucleus()
@@ -586,6 +588,15 @@ class VizController:
         tsid = self.selected_timestamp_id
         return tsc.previous_next(tsid)
 
+    def check_highlights(self):
+        if self.time_tree is not None:
+            self.time_tree.set_highlights(self.selected_timestamp_id, self.selected_nucleus_id)
+
+    def set_ids(self, timestamp_id, nucleus_id):
+        self.selected_timestamp_id = timestamp_id
+        self.selected_nucleus_id = nucleus_id
+        self.redraw()
+
     def redraw(self):
         #tsc = self.timestamp_collection
         self.show_nucleus_selection()
@@ -598,8 +609,7 @@ class VizController:
         if self.raster_display is not None:
             rimage = self.raster_image(ts)
             self.raster_display.set_image(rimage)
-        if self.time_tree is not None:
-            pass # XXXXX  NOT FINISHED
+        self.check_highlights()
         limage = self.label_image(ts)
         self.labelled_image_display.set_image(limage)
 
@@ -622,9 +632,10 @@ class VizController:
 
 class TimeTreeWidget:
 
-    def __init__(self, nucleus_collection, timestamp_collection):
+    def __init__(self, nucleus_collection, timestamp_collection, controller=None):
         self.nucleus_collection = nucleus_collection
         self.timestamp_collection = timestamp_collection
+        self.controller = controller
         self.widget = None
         self.frame = None
 
@@ -651,10 +662,35 @@ class TimeTreeWidget:
         # invisible event rectangle
         self.event_rect = self.frame.frame_rect(0, 1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
         self.event_rect.on("mousemove", self.mouse_move)
+        self.event_rect.on("click", self.click)
         widget.fit()
+
+    def set_highlights(self, timestamp_id, nucleus_id):
+        if nucleus_id:
+            nucleus = self.nucleus_collection.get_nucleus(nucleus_id)
+            self.nucleus_highlight.change(y=nucleus.position, color="blue")
+        else:
+            self.nucleus_highlight.change(color=INVISIBLE)
+        timestamp_index = self.timestamp_collection.get_index(timestamp_id)
+        self.timetamp_highlight.change(x=timestamp_index, color="red")
+
+    def ids_at(self, x, y):
+        timestamp_id = self.timestamp_collection.id_at_index(int(x))
+        nucleus_id = self.nucleus_collection.id_at_position(int(y))
+        return (timestamp_id, nucleus_id)
+
+    def click(self, event):
+        position = event['model_location']
+        x = int(position["x"])
+        y = int(position["y"])
+        (timestamp_id, nucleus_id) = ids = self.ids_at(x,y)
+        if self.controller is not None:
+            self.text.change(text="set ids: " + repr(ids))
+            self.controller.set_ids(timestamp_id, nucleus_id)
 
     def mouse_move(self, event):
         position = event['model_location']
         x = int(position["x"])
         y = int(position["y"])
-        self.text.change(text=repr((x,y)))
+        ids = self.ids_at(x,y)
+        self.text.change(text=repr(ids))
