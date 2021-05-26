@@ -69,6 +69,8 @@ class VizController:
         nucleus_collection.set_controller(self)
         self.snapshot_folder = os.path.join(folder, "snapshots")
         self.reverted_folder = os.path.join(folder, "reverted")
+        # indicator -- tree view or image view?
+        self.show_tree_view = False
 
     def reload(self):
         "Reload data sources from files."
@@ -79,6 +81,12 @@ class VizController:
         ts = self.timestamp()
         self.selected_layer = ts.nlayers() - 1
         self.selected_nucleus_id = None
+
+    def calculate_stats(self):
+        self.nucleus_collection.assign_children()
+        self.nucleus_collection.assign_widths()
+        self.timestamp_collection.assign_indices()
+        self.nucleus_collection.assign_positions()
 
     switch_count = 0
 
@@ -102,7 +110,12 @@ class VizController:
         else:
             return self.nucleus_collection.get_nucleus(nid)
 
-    def make_widget(self, side=350):
+    last_side = 350
+
+    def make_widget(self, side=None):
+        if side is None:
+            side = self.last_side
+        self.last_side = side
         widen_notebook()
         self.side = side
         ts = self.timestamp()
@@ -135,12 +148,22 @@ class VizController:
             reparent_assembly,
             join_assembly, 
             ])
-
         self.prev_button = widgets.Button(description="< Prev")
         self.prev_button.on_click(self.go_previous)
         self.timestamp_html = widgets.HTML(value=repr(self.selected_timestamp_id))
         self.next_button = widgets.Button(description="Next >")
         self.next_button.on_click(self.go_next)
+        self.tree_view_checkbox = widgets.Checkbox(
+            value=self.show_tree_view,
+            description="tree_view",
+        )
+        self.tree_view_checkbox.observe(self.tree_view_change, names='value')
+        timestamp_buttons = widgets.HBox([
+            self.prev_button,
+            self.timestamp_html,
+            self.next_button,
+        ])
+        timestamp_assembly = widgets.VBox([timestamp_buttons, self.tree_view_checkbox])
         self.layers_slider = widgets.IntSlider(
             value=self.selected_layer,
             min=0,
@@ -173,19 +196,28 @@ class VizController:
         ])
         self.blur_checkbox.observe(self.redraw_on_change, names='value')
         top_bar = widgets.HBox([
-            self.prev_button,
-            self.timestamp_html,
-            self.next_button,
+            #self.prev_button,
+            #self.timestamp_html,
+            #self.next_button,
+            timestamp_assembly,
             layers_assembly,
             checkboxen,
         ])
         rimage = self.raster_image(ts)
-        self.raster_display = array_image.show_array(
-            rimage, 
-            height=side, 
-            width=side,
-            hover_text_callback=self.raster_hover_text,
-        )
+        if self.show_tree_view:
+            self.raster_display = None
+            self.calculate_stats()
+            self.time_tree = TimeTreeWidget(self.nucleus_collection, self.timestamp_collection)
+            self.left_box = self.time_tree.make_widget(side, side)
+        else:
+            self.time_tree = None
+            self.raster_display = array_image.show_array(
+                rimage, 
+                height=side, 
+                width=side,
+                hover_text_callback=self.raster_hover_text,
+            )
+            self.left_box = self.raster_display
         limage = self.label_image(ts)
         self.labelled_image_display = array_image.show_array(
             limage, 
@@ -196,10 +228,11 @@ class VizController:
         )
         self.labelled_image_display.image_display.on("click", self.label_image_click)
         image_assembly = widgets.HBox([
-            self.raster_display,
+            self.left_box,
             self.labelled_image_display,
         ])
-        attach_keypress_handler(self.raster_display, self.keypress_callback)
+        #attach_keypress_handler(self.left_box, self.keypress_callback)
+        attach_keypress_handler(self.labelled_image_display, self.keypress_callback)
         # nucleus creation controls
         #self.nucleus_info = widgets.HTML(value="Enter name.")
         self.nucleus_name_input = widgets.Text(
@@ -259,6 +292,14 @@ class VizController:
         # fix up buttons, etcetera
         self.redraw()
         return self.widget
+
+    def tree_view_change(self, change):
+        value = change["new"]
+        if value != change["old"]:
+            self.show_tree_view = value
+            # redisplay all
+            self.make_widget()
+            self.info.value = "tree view <br> " + repr(value)
 
     def revert_click(self, button):
         from mouse_embryo_labeller import tools
@@ -518,6 +559,7 @@ class VizController:
             self.child_button.disabled = (self.selected_nucleus_id is None)
 
     def redraw_on_change(self, change):
+        self.selected_layer = self.layers_slider.value
         if change['new'] != change['old']:
             self.redraw()
 
@@ -553,8 +595,11 @@ class VizController:
         self.prev_button.disabled = (prv is None)
         self.next_button.disabled = (nxt is None)
         ts = self.timestamp()
-        rimage = self.raster_image(ts)
-        self.raster_display.set_image(rimage)
+        if self.raster_display is not None:
+            rimage = self.raster_image(ts)
+            self.raster_display.set_image(rimage)
+        if self.time_tree is not None:
+            pass # XXXXX  NOT FINISHED
         limage = self.label_image(ts)
         self.labelled_image_display.set_image(limage)
 
