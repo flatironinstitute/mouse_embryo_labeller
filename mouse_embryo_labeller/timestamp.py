@@ -131,7 +131,8 @@ class Timestamp:
             for (label, nucleus) in l2n.items():
                 if nucleus is old_nucleus:
                     nucleus = replacement_nucleus
-                new_l2n[label] = nucleus
+                if nucleus is not None:
+                    new_l2n[label] = nucleus
             self.label_to_nucleus = new_l2n
             self.save_mapping()
         return found
