@@ -146,11 +146,13 @@ class VizController:
         info_area1 = widgets.HBox([self.info], layout=widgets.Layout(border='solid'))
         reparent_assembly = self.nucleus_collection.reparent_assembly()
         join_assembly = self.nucleus_collection.join_assembly()
+        split_assembly = self.nucleus_collection.split_assembly()
         info_area = widgets.HBox([
             info_area1, 
             nucleus_info_area,
             reparent_assembly,
-            join_assembly, 
+            join_assembly,
+            split_assembly,
             ])
         self.prev_button = widgets.Button(description="< Prev")
         self.prev_button.on_click(self.go_previous)
@@ -399,6 +401,14 @@ class VizController:
         #self.redraw()
         self.make_widget()
         self.info.value = "JOINED " + repr(old_id) + ">>" + repr(replacement_id)
+
+    def split_right(self, split_id):
+        old_nucleus = self.get_nucleus()
+        new_nucleus = self.nucleus_collection.get_nucleus(split_id, check=False)
+        from_timestamp_id = self.selected_timestamp_id
+        self.timestamp_collection.split_right(from_timestamp_id, old_nucleus, new_nucleus)
+        self.redraw()
+        self.info.value = "SPLIT <br> %s: %s>>%s" % (from_timestamp_id, self.selected_nucleus_id, split_id)
 
     def set_nucleus_id(self, identifier):
         if self.nucleus_collection.get_nucleus(identifier, check=False):

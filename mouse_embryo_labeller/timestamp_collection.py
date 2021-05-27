@@ -44,6 +44,18 @@ class TimestampCollection:
         self.id_to_timestamp[identifier] = ts
         self.id_sequence.append(identifier)
 
+    def split_right(self, from_timestamp_id, old_nucleus, new_nucleus):
+        found = False
+        for ts_id in self.id_sequence:
+            if ts_id == from_timestamp_id:
+                found = True
+            if found:
+                ts = self.id_to_timestamp[ts_id]
+                changed = ts.relabel(old_nucleus, new_nucleus)
+                if changed:
+                    ts.save_mapping()
+        assert found, "timestamp for split not found: " + repr(from_timestamp_id)
+
     def forget_nucleus(self, n, controller):
         for (ts_id, ts) in self.id_to_timestamp.items():
             found = ts.forget_nucleus(n)

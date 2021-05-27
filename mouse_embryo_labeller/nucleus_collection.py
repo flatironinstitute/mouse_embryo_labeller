@@ -265,7 +265,10 @@ class NucleusCollection:
         self.join_button.disabled = True
         self.reparent_dropdown.options = drop_down_option
         self.reparent_dropdown.value = none_option
+        self.split_dropdown.options = drop_down_option
+        self.split_dropdown.value = none_option
         self.reparent_button.disabled = (nucleus is None)
+        self.split_button.disabled = (nucleus is None)
 
     def join_click(self, button):
         join_from_id = self.join_dropdown.value
@@ -306,6 +309,35 @@ class NucleusCollection:
             self.reparent_button,
         ], layout=widgets.Layout(border='solid'))
         return assembly
+
+    def split_assembly(self):
+        self.split_info = widgets.HTML(value="Split Right")
+        self.split_dropdown = widgets.Dropdown(
+            options=['NONE'],
+            value='NONE',
+            #description='new parent',
+            disabled=False,
+            layout={'width': "150px"}
+            )
+        self.split_dropdown.observe(self.split_select, names="value")
+        self.split_button = widgets.Button(description="Split", disabled=True)
+        self.split_button.on_click(self.split_click)
+        assembly = widgets.VBox([
+            self.split_info,
+            self.split_dropdown,
+            self.split_button,
+        ], layout=widgets.Layout(border='solid'))
+        return assembly
+
+    def split_select(self, change):
+        # do nothing -- user must click "split" button
+        pass
+
+    def split_click(self, button):
+        split_id = self.split_dropdown.value
+        if split_id == self.none_option:
+            split_id = None
+        self.controller.split_right(split_id)
 
     def join_select(self, change):
         none_option = self.none_option
