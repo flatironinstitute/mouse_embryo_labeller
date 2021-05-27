@@ -76,6 +76,7 @@ class VizController:
     def reload(self):
         "Reload data sources from files."
         self.nucleus_collection = nucleus_collection.collection_from_json(self.folder)
+        self.nucleus_collection.set_controller(self)
         self.timestamp_collection = load_preprocessed_timestamps(self.folder, self.nucleus_collection)
         self.selected_timestamp_id = self.timestamp_collection.first_id()
         self.last_timestamp = None
@@ -497,6 +498,7 @@ class VizController:
         n = nucleus.Nucleus(identifier, color, parent_id)
         self.nucleus_collection.add_nucleus(n)
         self.nucleus_collection.save_json(self.folder)
+        self.calculate_stats()
         # only switch to nucleus if no parent
         if parent_id is None:
             #self.selected_nucleus_id = identifier
