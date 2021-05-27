@@ -667,7 +667,13 @@ class TimeTreeWidget:
             frame_minx=0, frame_miny=0, frame_maxx=fwidth, frame_maxy=fheight)
         with self.widget.delay_redraw():
             self.timetamp_highlight = self.frame.frame_rect(self.timestamp_index, 1, w=0.9, h=fheight, fill=False, color="black", name=True)
-            self.nucleus_highlight = self.frame.frame_rect(0, self.nucleus_position, w=fwidth, h=0.9, fill=False, color="red", name=True)
+            ncolor = INVISIBLE
+            if self.controller:
+                nucleus = self.controller.get_nucleus()
+                if nucleus:
+                    ncolor = "red"
+                    self.nucleus_position = nucleus.position
+            self.nucleus_highlight = self.frame.frame_rect(0, self.nucleus_position, w=fwidth, h=0.9, fill=False, color=ncolor, name=True)
             self.nucleus_collection.draw_nuclei(self.frame)
             self.text = self.frame.text(0, fheight+1.2, "Time tree diagram", name=True)
             # invisible event rectangle
