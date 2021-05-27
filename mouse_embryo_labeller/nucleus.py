@@ -25,8 +25,29 @@ class Nucleus:
     def draw_rectangles(self, on_frame):
         color = self.html_color()
         position = self.position
-        for index in self.timestamp_indices:
-            on_frame.frame_rect(x=index, y=position+0.25, h=0.5, w=0.8, color=color)
+        #for index in self.timestamp_indices:
+        #    on_frame.frame_rect(x=index, y=position+0.25, h=0.5, w=0.8, color=color)
+        indices = sorted(self.timestamp_indices)
+        if len(indices) == 0:
+            return
+        start_index = None
+        last_index = None
+        def emit_rectangle():
+            w = last_index - start_index + 0.8
+            on_frame.frame_rect(x=start_index, y=position+0.25, h=0.5, w=w, color=color)
+        for index in indices:
+            if start_index is None:
+                start_index = index
+                last_index = start_index
+            else:
+                if index > last_index + 1:
+                    emit_rectangle()
+                    start_index = index
+                    last_index = start_index
+                else:
+                    last_index = index
+        if start_index is not None:
+            emit_rectangle()
 
     def min_index(self):
         result = 0
