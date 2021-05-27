@@ -500,9 +500,10 @@ class VizController:
         self.nucleus_collection.save_json(self.folder)
         self.calculate_stats()
         # only switch to nucleus if no parent
-        if parent_id is None:
-            #self.selected_nucleus_id = identifier
-            self.set_nucleus_id(identifier)
+        select_id = parent_id
+        if select_id is None:
+            select_id = identifier
+        self.set_nucleus_id(select_id)
         self.nucleus_collection.set_widget_options(callback=None, selected=identifier)
         self.show_nucleus_selection()
         self.nucleus_name_input.value = ""
