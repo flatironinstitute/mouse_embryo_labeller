@@ -13,6 +13,9 @@ class TimestampCollection:
         self.id_to_timestamp = {}
         self.id_sequence = []
 
+    def reset_stats(self):
+        pass  # placeholder -- nothing to be done here yet.
+
     def width(self):
         return len(self.id_sequence)
 

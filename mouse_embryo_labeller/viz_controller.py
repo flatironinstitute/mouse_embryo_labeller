@@ -84,6 +84,8 @@ class VizController:
         self.selected_nucleus_id = None
 
     def calculate_stats(self):
+        self.nucleus_collection.reset_stats()
+        self.timestamp_collection.reset_stats()
         self.nucleus_collection.assign_children()
         self.nucleus_collection.assign_widths()
         self.timestamp_collection.assign_indices()
@@ -383,7 +385,8 @@ class VizController:
         self.timestamp_collection.forget_nucleus(n, self)
         self.nucleus_collection.forget_nucleus_id(del_id, self.folder)
         self.nucleus_collection.set_widget_options(callback=None, selected=None)
-        self.redraw()
+        #self.redraw()
+        self.make_widget()
         self.info.value = "DELETED " + repr(del_id)
 
     def relabel_and_delete(self, old_id, replacement_id):
@@ -401,7 +404,7 @@ class VizController:
             self.selected_nucleus_id = identifier
         else:
             self.selected_nucleus_id = None
-        self.nucleus_collection.set_selected_nucleus(self.selected_nucleus_id)
+        #self.nucleus_collection.set_selected_nucleus(self.selected_nucleus_id) -- causes infinite recursion.
         self.nucleus_collection.set_widget_options(callback=None, selected=self.selected_nucleus_id)
         self.show_nucleus_selection()
         self.check_highlights()
@@ -602,6 +605,7 @@ class VizController:
         self.redraw()
 
     def redraw(self):
+        self.calculate_stats()
         #tsc = self.timestamp_collection
         self.show_nucleus_selection()
         tsid = self.selected_timestamp_id
@@ -661,15 +665,16 @@ class TimeTreeWidget:
         self.frame = self.widget.frame_region(
             minx=0, miny=0, maxx=self.width, maxy=self.height, 
             frame_minx=0, frame_miny=0, frame_maxx=fwidth, frame_maxy=fheight)
-        self.timetamp_highlight = self.frame.frame_rect(self.timestamp_index, 1, w=0.9, h=fheight, fill=False, color="black", name=True)
-        self.nucleus_highlight = self.frame.frame_rect(0, self.nucleus_position, w=fwidth, h=0.9, fill=False, color="red", name=True)
-        self.nucleus_collection.draw_nuclei(self.frame)
-        self.text = self.frame.text(0, fheight+1.2, "Time tree diagram", name=True)
-        # invisible event rectangle
-        self.event_rect = self.frame.frame_rect(0, 1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
-        self.event_rect.on("mousemove", self.mouse_move)
-        self.event_rect.on("click", self.click)
-        widget.fit()
+        with self.widget.delay_redraw():
+            self.timetamp_highlight = self.frame.frame_rect(self.timestamp_index, 1, w=0.9, h=fheight, fill=False, color="black", name=True)
+            self.nucleus_highlight = self.frame.frame_rect(0, self.nucleus_position, w=fwidth, h=0.9, fill=False, color="red", name=True)
+            self.nucleus_collection.draw_nuclei(self.frame)
+            self.text = self.frame.text(0, fheight+1.2, "Time tree diagram", name=True)
+            # invisible event rectangle
+            self.event_rect = self.frame.frame_rect(0, 1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
+            self.event_rect.on("mousemove", self.mouse_move)
+            self.event_rect.on("click", self.click)
+            widget.fit()
 
     def set_highlights(self, timestamp_id, nucleus_id):
         ids = (timestamp_id, nucleus_id)

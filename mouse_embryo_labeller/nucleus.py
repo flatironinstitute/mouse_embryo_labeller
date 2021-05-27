@@ -13,6 +13,9 @@ class Nucleus:
         self.parent_id = parent_id
         self.color = np.zeros((3,), dtype=np.int)
         self.color[:] = color
+        self.reset_stats()
+
+    def reset_stats(self):
         self.children = None
         self.width = None
         self.position = None
@@ -25,10 +28,16 @@ class Nucleus:
         for index in self.timestamp_indices:
             on_frame.frame_rect(x=index, y=position+0.25, h=0.5, w=0.8, color=color)
 
+    def min_index(self):
+        result = 0
+        if self.timestamp_indices:
+            result = min(self.timestamp_indices)
+        return result
+
     def draw_label(self, on_frame):
         color = self.html_color()
         position = self.position
-        index = min(self.timestamp_indices)
+        index = self.min_index()
         on_frame.text(index-0.1, position+0.5, str(self.identifier) + " ", align="right", valign="center", color=color, background="#eee")
 
     def draw_link(self, on_frame, nucleus_collection):
@@ -37,9 +46,9 @@ class Nucleus:
             parent = nucleus_collection.get_nucleus(parent_id)
             color = self.html_color()
             position = self.position
-            index = min(self.timestamp_indices)
+            index = self.min_index()
             p_position = parent.position
-            p_index = min(parent.timestamp_indices)
+            p_index = parent.min_index() #min(parent.timestamp_indices)
             on_frame.line(index+0.5, position+0.5, p_index+0.5, p_position+0.5, color=color, lineWidth=5)
 
     def add_timestamp_index(self, index):

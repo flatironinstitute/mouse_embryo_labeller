@@ -28,11 +28,15 @@ class NucleusCollection:
         self.filename = filename
         self.nuclei =  []
         self.id_to_nucleus = {}
-        self.selected_id = None
         self.controller = None
         self.last_position = None
         for n in nuclei:
             self.add_nucleus(n)
+        self.reset_stats()
+
+    def reset_stats(self):
+        for n in self.nuclei:
+            n.reset_stats()
 
     def id_at_position(self, position):
         result = None
@@ -121,14 +125,15 @@ class NucleusCollection:
             return name not in self.id_to_nucleus
         return False
 
-    def set_selected_nucleus(self, id):
-        if id is not None:
-            assert id in self.id_to_nucleus, "no such id in collection: " + repr(id)
-        self.selected_id = id
-        self.check_buttons()
+    #def set_selected_nucleus(self, id):  -- not used
+    #    if id is not None:
+    #        assert id in self.id_to_nucleus, "no such id in collection: " + repr(id)
+    #    #self.selected_id = id
+    #    self.controller.set_nucleus_id(id)
+    #    self.check_buttons()
 
     def get_selected_nucleus(self):
-        id = self.selected_id
+        id = self.controller.selected_nucleus_id
         if id is None:
             return None
         return self.get_nucleus(id)
@@ -257,7 +262,7 @@ class NucleusCollection:
 
     def join_click(self, button):
         join_from_id = self.join_dropdown.value
-        join_to_id = self.selected_id
+        join_to_id = self.controller.selected_nucleus_id
         valid_ids = self.id_to_nucleus
         assert (join_from_id in valid_ids) and (join_to_id in valid_ids), "Invalid ids: " + repr([join_from_id, join_to_id])
         self.controller.relabel_and_delete(join_from_id, join_to_id)
@@ -296,14 +301,15 @@ class NucleusCollection:
 
     def join_select(self, change):
         none_option = self.none_option
-        self.join_button.disabled = ((change["new"] == none_option) and (self.selected_id is not None))
+        selected_id = self.controller.selected_nucleus_id
+        self.join_button.disabled = ((change["new"] == none_option) and (selected_id is not None))
 
     def reparent_select(self, change):
         #self.check_buttons()
-        pass # do nothing -- the reparent button should only be enabled if selected_id is set
+        pass # do nothing -- the reparent button should only be enabled if selected id is set
 
     def check_buttons(self):
-        selected = self.selected_id
+        selected = self.controller.selected_nucleus_id
         if selected is None:
             self.reparent_button.disabled = True
             self.join_button.disabled = True

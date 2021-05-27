@@ -87,7 +87,9 @@ class Timestamp:
         self.r3d_max_intensity = max_intensity
         self.l3d_extruded = extruded
 
-    def load_mapping(self, from_path, nucleus_collection=None):
+    def load_mapping(self, from_path=None, nucleus_collection=None):
+        if from_path is None:
+            from_path = self.save_path
         f = open(from_path)
         json_info = json.load(f)
         assert json_info["timestamp"] == self.identifier, "wrong timestamp in json file: " + repr((json_info["timestamp"],self.identifier))
@@ -98,18 +100,27 @@ class Timestamp:
             label = int(label)
             if identifier is not None:
                 assert nucleus_collection is not None, "no collection -- cannot map nucleus id. " + repr((label, identifier))
-                n = nucleus_collection.get_nucleus(identifier)
-                label_to_nucleus[label] = n
+                n = nucleus_collection.get_nucleus(identifier, check=False)
+                # silently ignore bogus nucleus?
+                if n is not None:
+                    label_to_nucleus[label] = n
+        self.save_path = from_path
         self.label_to_nucleus = label_to_nucleus
 
     def assign_nucleus(self, label, nucleus):
-        self.label_to_nucleus[label] = nucleus
+        l2n = self.label_to_nucleus
+        if (nucleus is None) and (label in l2n):
+            del l2n[label]
+        else:
+            l2n[label] = nucleus
+        self.save_mapping()
 
     def forget_nucleus(self, nucleus):
         l2n = self.label_to_nucleus
         found = (nucleus in list(l2n.values()))
         if found:
             self.label_to_nucleus = {l: n for (l, n) in l2n.items() if n is not nucleus}
+            self.save_mapping()
         return found
 
     def relabel(self, old_nucleus, replacement_nucleus):
@@ -122,6 +133,7 @@ class Timestamp:
                     nucleus = replacement_nucleus
                 new_l2n[label] = nucleus
             self.label_to_nucleus = new_l2n
+            self.save_mapping()
         return found
 
     def get_nucleus(self, label):
@@ -205,7 +217,9 @@ class Timestamp:
         sout = s + (3,)
         return colors.reshape(sout)
 
-    def save_mapping(self, to_path):
+    def save_mapping(self, to_path=None):
+        if to_path is None:
+            to_path = self.save_path
         self.save_path = to_path
         f = open(to_path, "w")
         json_info = self.json_mapping()
