@@ -95,7 +95,8 @@ class FileSystemHelper:
         self.nc = get_example_nucleus_collection(self.destination)
 
     def trackname(self, tracknum):
-        return "TR" + repr(tracknum)
+        #return "TR" + repr(tracknum)
+        return "TR%05d" % tracknum
 
     def load_track_data(self, tsnum2label2track):
         for tsnum in tsnum2label2track:
