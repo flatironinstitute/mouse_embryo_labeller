@@ -34,6 +34,12 @@ class NucleusCollection:
             self.add_nucleus(n)
         self.reset_stats()
 
+    def sorted_nuclei(self):
+        "nuclei sorted by increasing id"
+        id2n = self.id_to_nucleus
+        ids = sorted(id2n.keys())
+        return [id2n[ident] for ident in ids]
+
     def reset_stats(self):
         for n in self.nuclei:
             n.reset_stats()
@@ -92,7 +98,7 @@ class NucleusCollection:
     def assign_positions(self):
         # after assign_width
         cursor = 0
-        for n in self.nuclei:
+        for n in reversed(self.sorted_nuclei()):
             if n.parent_id is None:
                 cursor = self.assign_position(n, cursor)
         self.last_position = cursor
@@ -247,8 +253,9 @@ class NucleusCollection:
         assert widget is not None, "no widget initialized"
         nucleus = self.get_selected_nucleus()
         nulloption = '<option value="NONE">NONE</option>'
-        options = [n.html_option() for n in self.nuclei]
-        identifiers = [n.identifier for n in self.nuclei]
+        nuclei = self.sorted_nuclei()
+        options = [n.html_option() for n in nuclei]
+        identifiers = [n.identifier for n in nuclei]
         options = [nulloption] + options
         widget.element.set_embryo_options(options, callback, selected)
         none_option = self.none_option
@@ -278,7 +285,8 @@ class NucleusCollection:
         self.set_widget_options(callback=None, selected=None)
         #self.controller.redraw()
         self.controller.make_widget()
-        self.controller.info.value = "reparented " + repr(new_parent)
+        child = self.controller.selected_nucleus_id
+        self.controller.info.value = repr(child) + "<br> reparented " + repr(new_parent)
 
     def reparent_assembly(self):
         self.reparent_info = widgets.HTML(value="Change Parent")
