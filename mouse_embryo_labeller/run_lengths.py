@@ -27,7 +27,7 @@ def run_length_encode(array, chunksize=((1 << 16) - 1), dtype=np.int16):
         runlengths[nchanges, 1] = chunk_length - cursor
         runlength_chunks.append(runlengths)
         chunk_cursor = chunk_end
-    all_runlengths = np.vstack(runlength_chunks)
+    all_runlengths = np.vstack(runlength_chunks).astype(dtype)
     description = dict(
         shape=shape,
         runlengths=all_runlengths,
