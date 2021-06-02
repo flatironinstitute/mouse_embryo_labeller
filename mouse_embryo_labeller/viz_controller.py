@@ -44,6 +44,11 @@ element.keypress_focus = function () {
 element.keypress_focus();
 """
 
+VISIBILITY_MAP = {
+    True: "visible",
+    False: "hidden",
+}
+
 def attach_keypress_handler(to_proxy_widget, keypress_callback, num_to_key=NUM_TO_KEY):
     to_proxy_widget.js_init(KEYPRESS_JS, NUM_TO_KEY=num_to_key, keypress_callback=keypress_callback)
 
@@ -194,11 +199,12 @@ class VizController:
         #    self.layers_slider,
         #    self.colorize_checkbox,
         #])
+        coords_visible = VISIBILITY_MAP[not self.show_tree_view]
         coords_assembly = widgets.HBox([
             self.timestamp_html,
             self.layers_slider,
             self.tree_view_checkbox,
-        ])
+        ], )
         self.extruded_checkbox = widgets.Checkbox(
             value=True,
             description="extruded",
@@ -211,7 +217,8 @@ class VizController:
         self.raster_assembly = widgets.HBox([
             self.max_intensity_checkbox,
             self.colorize_checkbox,
-        ])
+            self.blur_checkbox,
+        ], layout=dict(visibility=coords_visible))
         #LHSpresentation_assembly = widgets.HBox([
         #    self.tree_view_checkbox,
         #    self.raster_assembly,
@@ -221,10 +228,11 @@ class VizController:
             coords_assembly,
             LHSpresentation_assembly,
         ])
-        RHScontrols_assembly = widgets.VBox([
-            self.extruded_checkbox,
-            self.blur_checkbox,
-        ])
+        #RHScontrols_assembly = widgets.VBox([
+        #    self.extruded_checkbox,
+        #    self.blur_checkbox,
+        #])
+        RHScontrols_assembly = self.extruded_checkbox
         self.blur_checkbox.observe(self.redraw_on_change, names='value')
         top_bar = widgets.HBox([
             #self.prev_button,
