@@ -72,6 +72,8 @@ class VizController:
         self.reverted_folder = os.path.join(folder, "reverted")
         # indicator -- tree view or image view?
         self.show_tree_view = False
+        self.colorize_raster = False
+        self.show_max_intensities = True
 
     def reload(self):
         "Reload data sources from files."
@@ -154,22 +156,22 @@ class VizController:
             join_assembly,
             split_assembly,
             ])
-        self.prev_button = widgets.Button(description="< Prev")
-        self.prev_button.on_click(self.go_previous)
+        #self.prev_button = widgets.Button(description="< Prev")
+        #self.prev_button.on_click(self.go_previous)
         self.timestamp_html = widgets.HTML(value=repr(self.selected_timestamp_id))
-        self.next_button = widgets.Button(description="Next >")
-        self.next_button.on_click(self.go_next)
+        #self.next_button = widgets.Button(description="Next >")
+        #self.next_button.on_click(self.go_next)
         self.tree_view_checkbox = widgets.Checkbox(
             value=self.show_tree_view,
             description="tree_view",
         )
         self.tree_view_checkbox.observe(self.tree_view_change, names='value')
-        timestamp_buttons = widgets.HBox([
-            self.prev_button,
-            self.timestamp_html,
-            self.next_button,
-        ])
-        timestamp_assembly = widgets.VBox([timestamp_buttons, self.tree_view_checkbox])
+        #timestamp_buttons = widgets.HBox([
+        #    #self.prev_button,
+        #    self.timestamp_html,
+        #    #self.next_button,
+        #])
+        #timestamp_assembly = widgets.VBox([timestamp_buttons, self.tree_view_checkbox])
         self.layers_slider = widgets.IntSlider(
             value=self.selected_layer,
             min=0,
@@ -179,13 +181,23 @@ class VizController:
         )
         self.layers_slider.observe(self.redraw_on_change, names='value')
         self.colorize_checkbox = widgets.Checkbox(
-            value=False,
+            value=self.colorize_raster,
             description="pseudocolors",
         )
         self.colorize_checkbox.observe(self.redraw_on_change, names='value')
-        layers_assembly = widgets.VBox([
+        self.max_intensity_checkbox = widgets.Checkbox(
+            value=self.show_max_intensities,
+            description="max intensity",
+        )
+        self.max_intensity_checkbox.observe(self.redraw_on_change, names='value')
+        #layers_assembly = widgets.VBox([
+        #    self.layers_slider,
+        #    self.colorize_checkbox,
+        #])
+        coords_assembly = widgets.HBox([
+            self.timestamp_html,
             self.layers_slider,
-            self.colorize_checkbox,
+            self.tree_view_checkbox,
         ])
         self.extruded_checkbox = widgets.Checkbox(
             value=True,
@@ -196,7 +208,20 @@ class VizController:
             value=True,
             description="blur",
         )
-        checkboxen = widgets.VBox([
+        self.raster_assembly = widgets.HBox([
+            self.max_intensity_checkbox,
+            self.colorize_checkbox,
+        ])
+        #LHSpresentation_assembly = widgets.HBox([
+        #    self.tree_view_checkbox,
+        #    self.raster_assembly,
+        #])
+        LHSpresentation_assembly = self.raster_assembly
+        LHScontrols_assembly = widgets.VBox([
+            coords_assembly,
+            LHSpresentation_assembly,
+        ])
+        RHScontrols_assembly = widgets.VBox([
             self.extruded_checkbox,
             self.blur_checkbox,
         ])
@@ -205,9 +230,10 @@ class VizController:
             #self.prev_button,
             #self.timestamp_html,
             #self.next_button,
-            timestamp_assembly,
-            layers_assembly,
-            checkboxen,
+            #timestamp_assembly,
+            #layers_assembly,
+            LHScontrols_assembly,
+            RHScontrols_assembly,
         ])
         rimage = self.raster_image(ts)
         if self.show_tree_view:
@@ -579,6 +605,9 @@ class VizController:
             self.child_button.disabled = (self.selected_nucleus_id is None)
 
     def redraw_on_change(self, change):
+        self.show_tree_view = self.tree_view_checkbox.value
+        self.colorize_raster = self.colorize_checkbox.value
+        self.show_max_intensities = self.max_intensity_checkbox.value
         self.selected_layer = self.layers_slider.value
         if change['new'] != change['old']:
             self.redraw()
@@ -624,8 +653,8 @@ class VizController:
         tsid = self.selected_timestamp_id
         self.timestamp_html.value = repr(tsid)
         (prv, nxt) = self.previous_next()
-        self.prev_button.disabled = (prv is None)
-        self.next_button.disabled = (nxt is None)
+        #self.prev_button.disabled = (prv is None)
+        #self.next_button.disabled = (nxt is None)
         ts = self.timestamp()
         if self.raster_display is not None:
             rimage = self.raster_image(ts)
@@ -645,11 +674,11 @@ class VizController:
             )
 
     def raster_image(self, ts):
-        extruded = self.extruded_checkbox.value
+        max_intensity = self.max_intensity_checkbox.value
         layer = self.layers_slider.value
         blur = self.blur_checkbox.value
         colorize = self.colorize_checkbox.value
-        return ts.raster_slice_with_boundary(layer, extruded, blur=blur, colorize=colorize)
+        return ts.raster_slice_with_boundary(layer, max_intensity, blur=blur, colorize=colorize)
 
 class TimeTreeWidget:
 
