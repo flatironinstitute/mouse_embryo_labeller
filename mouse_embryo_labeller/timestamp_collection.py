@@ -36,6 +36,13 @@ class TimestampCollection:
     def get_timestamp(self, identifier):
         return self.id_to_timestamp[identifier]
 
+    def get_indexed_timestamp(self, index):
+        identifier = self.id_sequence[index]
+        return self.id_to_timestamp[identifier]
+
+    def index_of_id(self, identifier):
+        return self.id_sequence.index(identifier)
+
     def first_id(self):
         return self.id_sequence[0]
 

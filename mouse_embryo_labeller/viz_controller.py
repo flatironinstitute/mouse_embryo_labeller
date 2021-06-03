@@ -64,7 +64,7 @@ class VizController:
         self.folder = folder
         self.timestamp_collection = timestamp_collection
         self.nucleus_collection = nucleus_collection
-        self.selected_timestamp_id = self.timestamp_collection.first_id()
+        self.selected_timestamp_index = 0
         #self.selected_nucleus_id = None
         self.last_timestamp = None
         ts = self.timestamp()
@@ -85,7 +85,7 @@ class VizController:
         self.nucleus_collection = nucleus_collection.collection_from_json(self.folder)
         self.nucleus_collection.set_controller(self)
         self.timestamp_collection = load_preprocessed_timestamps(self.folder, self.nucleus_collection)
-        self.selected_timestamp_id = self.timestamp_collection.first_id()
+        self.selected_timestamp_index = 0
         self.last_timestamp = None
         ts = self.timestamp()
         self.selected_layer = ts.nlayers() - 1
@@ -103,7 +103,7 @@ class VizController:
 
     def timestamp(self):
         last = self.last_timestamp
-        current = self.timestamp_collection.get_timestamp(self.selected_timestamp_id)
+        current = self.timestamp_collection.get_indexed_timestamp(self.selected_timestamp_index)
         if last is not current:
             # clear the old timestamp (don't waste memory) amd load the new one
             #print("SWITCHING", repr([last, current]))
@@ -113,6 +113,9 @@ class VizController:
             self.switch_count += 1
         self.last_timestamp = current
         return current
+
+    def current_timestamp_id(self):
+        return self.timestamp().identifier
 
     def get_nucleus(self):
         nid = self.selected_nucleus_id
@@ -163,9 +166,18 @@ class VizController:
             ])
         #self.prev_button = widgets.Button(description="< Prev")
         #self.prev_button.on_click(self.go_previous)
-        self.timestamp_html = widgets.HTML(value=repr(self.selected_timestamp_id))
         #self.next_button = widgets.Button(description="Next >")
         #self.next_button.on_click(self.go_next)
+        self.timestamp_input = widgets.BoundedIntText(
+            value=self.selected_timestamp_index,
+            min=0,
+            max=len(self.timestamp_collection.id_sequence),
+            step=1,
+            description='Timestamp:',
+            disabled=False
+        )
+        self.timestamp_input.observe(self.redraw_on_change, names='value')
+        #self.timestamp_input.on_submit(self.redraw_on_change)  # doesn't work
         self.tree_view_checkbox = widgets.Checkbox(
             value=self.show_tree_view,
             description="tree_view",
@@ -201,7 +213,7 @@ class VizController:
         #])
         coords_visible = VISIBILITY_MAP[not self.show_tree_view]
         coords_assembly = widgets.HBox([
-            self.timestamp_html,
+            self.timestamp_input,
             self.layers_slider,
             self.tree_view_checkbox,
         ], )
@@ -439,7 +451,7 @@ class VizController:
     def split_right(self, split_id):
         old_nucleus = self.get_nucleus()
         new_nucleus = self.nucleus_collection.get_nucleus(split_id, check=False)
-        from_timestamp_id = self.selected_timestamp_id
+        from_timestamp_id = self.current_timestamp_id()
         self.timestamp_collection.split_right(from_timestamp_id, old_nucleus, new_nucleus)
         self.redraw()
         self.info.value = "SPLIT <br> %s: %s>>%s" % (from_timestamp_id, self.selected_nucleus_id, split_id)
@@ -484,11 +496,11 @@ class VizController:
         ts = self.timestamp()
         n = self.get_nucleus()
         ts.assign_nucleus(label, n)
-        tsid = self.selected_timestamp_id
+        tsid = self.current_timestamp_id()
         if n is None:
-            self.info.value = "Reset nucleus assignment for label %s in timestamp %s." % (label, tsid)
+            self.info.value = "Reset nucleus assignment <br> for label %s in timestamp %s." % (label, tsid)
         else:
-            self.info.value = "Assigned label %s to nucleus %s in timestamp %s." % (label, n.identifier, tsid)
+            self.info.value = "Assigned label <br> %s to nucleus %s in timestamp %s." % (label, n.identifier, tsid)
         # save the assignment
         path = self.ts_assignment_path()
         ts.save_mapping(path)
@@ -496,7 +508,7 @@ class VizController:
 
     def ts_assignment_path(self, tsid=None):
         if tsid is None:
-            tsid = self.selected_timestamp_id
+            tsid = self.current_timestamp_id()
         assert tsid is not None, "cannot save -- no selected ts"
         filename = "ts%s.json" % tsid
         return os.path.join(self.folder, filename)
@@ -504,7 +516,6 @@ class VizController:
     def raster_hover_text(self, x, y, array):
         ts = self.timestamp()
         layer = self.layers_slider.value
-        #tsid = self.selected_timestamp_id
         #prefix = repr((y, x)) + ": "
         extruded = self.extruded_checkbox.value
         intensity = ts.get_intensity(layer, y, x, extruded)
@@ -513,7 +524,6 @@ class VizController:
     def label_image_hover(self, x, y, array):
         ts = self.timestamp()
         layer = self.layers_slider.value
-        tsid = self.selected_timestamp_id
         prefix = repr((y, x)) + ": "
         suffix = "error"
         extruded = self.extruded_checkbox.value
@@ -617,49 +627,51 @@ class VizController:
         self.colorize_raster = self.colorize_checkbox.value
         self.show_max_intensities = self.max_intensity_checkbox.value
         self.selected_layer = self.layers_slider.value
+        self.selected_timestamp_index = self.timestamp_input.value
         if change['new'] != change['old']:
-            self.redraw()
+            self.redraw() 
 
     def go_next(self, button):
         (prv, nxt) = self.previous_next()
         if nxt is None:
-            self.info.value = "No next timestamp: " + repr(self.selected_timestamp_id)
+            self.info.value = "No next timestamp: " + repr(self.current_timestamp_id())
             return
-        self.selected_timestamp_id = nxt
+        self.selected_timestamp_index = self.timestamp_collection.index_of_id(nxt) # nxt
         self.info.value = "next timestamp: " + repr(nxt)
-        self.redraw()
+        self.timestamp_input.value = self.selected_timestamp_index
+        #self.redraw() -- triggered automatically
 
     def go_previous(self, button):
         (prv, nxt) = self.previous_next()
         if prv is None:
-            self.info.value = "No previous timestamp: " + repr(self.selected_timestamp_id)
+            self.info.value = "No previous timestamp: " + repr(self.current_timestamp_id())
             return
-        self.selected_timestamp_id = prv
+        self.selected_timestamp_index = self.timestamp_collection.index_of_id(prv) # prv
         self.info.value = "previous timestamp: " + repr(prv)
-        self.redraw()
+        self.timestamp_input.value = self.selected_timestamp_index
+        #self.redraw() -- triggered automatically
 
     def previous_next(self):
         tsc = self.timestamp_collection
-        tsid = self.selected_timestamp_id
+        tsid = self.current_timestamp_id()
         return tsc.previous_next(tsid)
 
     def check_highlights(self):
         if self.time_tree is not None:
-            self.time_tree.set_highlights(self.selected_timestamp_id, self.selected_nucleus_id)
+            self.time_tree.set_highlights(self.current_timestamp_id(), self.selected_nucleus_id)
             self.time_tree.make_frame()
 
     def set_ids(self, timestamp_id, nucleus_id):
-        self.selected_timestamp_id = timestamp_id
+        self.selected_timestamp_index = self.timestamp_collection.index_of_id(timestamp_id)
         #self.selected_nucleus_id = nucleus_id
         self.set_nucleus_id(nucleus_id)
-        self.redraw()
+        self.timestamp_input.value = self.selected_timestamp_index
+        #self.redraw() -- triggered automatically
 
     def redraw(self):
         self.calculate_stats()
         #tsc = self.timestamp_collection
         self.show_nucleus_selection()
-        tsid = self.selected_timestamp_id
-        self.timestamp_html.value = repr(tsid)
         (prv, nxt) = self.previous_next()
         #self.prev_button.disabled = (prv is None)
         #self.next_button.disabled = (nxt is None)

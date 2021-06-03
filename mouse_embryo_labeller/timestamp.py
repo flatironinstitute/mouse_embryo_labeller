@@ -30,7 +30,7 @@ class Timestamp:
         self.l3d_extruded = None
 
     def __repr__(self):
-        return "Timestamp(%s)" % self.identifier
+        return "Timestamp(%s)" % repr(self.identifier)
 
     def save_array_path(self, path):
         #print(self.identifier, "array path", path)
