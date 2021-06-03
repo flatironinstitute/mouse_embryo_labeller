@@ -79,6 +79,7 @@ class VizController:
         self.show_tree_view = False
         self.colorize_raster = False
         self.show_max_intensities = True
+        self.time_tree = TimeTreeWidget(self.nucleus_collection, self.timestamp_collection, self)
 
     def reload(self):
         "Reload data sources from files."
@@ -259,10 +260,10 @@ class VizController:
         if self.show_tree_view:
             self.raster_display = None
             self.calculate_stats()
-            self.time_tree = TimeTreeWidget(self.nucleus_collection, self.timestamp_collection, self)
+            #self.time_tree = TimeTreeWidget(self.nucleus_collection, self.timestamp_collection, self)
             self.left_box = self.time_tree.make_widget(side, side)
         else:
-            self.time_tree = None
+            #self.time_tree = None
             self.raster_display = array_image.show_array(
                 rimage, 
                 height=side, 
@@ -657,7 +658,7 @@ class VizController:
         return tsc.previous_next(tsid)
 
     def check_highlights(self):
-        if self.time_tree is not None:
+        if self.show_tree_view:
             self.time_tree.set_highlights(self.current_timestamp_id(), self.selected_nucleus_id)
             self.time_tree.make_frame()
 
