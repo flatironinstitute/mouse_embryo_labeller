@@ -15,6 +15,9 @@ class Nucleus:
         self.color[:] = color
         self.reset_stats()
 
+    def __repr__(self):
+        return "N(%s)" % repr(self.identifier)
+
     def reset_stats(self):
         self.children = None
         self.width = None
@@ -22,9 +25,10 @@ class Nucleus:
         self.last_descendent_position = None
         self.timestamp_indices = set()
 
-    def draw_rectangles(self, on_frame):
+    def draw_rectangles(self, on_frame, position=None):
         color = self.html_color()
-        position = self.position
+        if position is None:
+            position = self.position
         #for index in self.timestamp_indices:
         #    on_frame.frame_rect(x=index, y=position+0.25, h=0.5, w=0.8, color=color)
         indices = sorted(self.timestamp_indices)
@@ -48,6 +52,12 @@ class Nucleus:
                     last_index = index
         if start_index is not None:
             emit_rectangle()
+
+    def intersects_index_range(self, low_index, high_index):
+        for index in self.timestamp_indices:
+            if low_index <= index <= high_index:
+                return True
+        return False
 
     def min_index(self):
         result = 0
