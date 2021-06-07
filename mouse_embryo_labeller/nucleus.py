@@ -24,13 +24,21 @@ class Nucleus:
         self.position = None
         self.last_descendent_position = None
         self.timestamp_indices = set()
+        self.range_position = None
 
-    def draw_rectangles(self, on_frame, position=None):
+    def rectangle_position(self, in_range=False):
+        if in_range:
+            return self.range_position
+        else:
+            return self.position
+
+    def draw_rectangles(self, on_frame, position=None, in_range=False):
         color = self.html_color()
         if position is None:
-            position = self.position
-        #for index in self.timestamp_indices:
-        #    on_frame.frame_rect(x=index, y=position+0.25, h=0.5, w=0.8, color=color)
+            position = self.rectangle_position(in_range=in_range)
+            if position is None:
+                # ("don't draw", self, "not in range")
+                return
         indices = sorted(self.timestamp_indices)
         if len(indices) == 0:
             return
@@ -38,6 +46,7 @@ class Nucleus:
         last_index = None
         def emit_rectangle():
             w = last_index - start_index + 0.8
+            # ("draw", self, "at", dict(x=start_index, y=position+0.25, h=0.5, w=w, color=color))
             on_frame.frame_rect(x=start_index, y=position+0.25, h=0.5, w=w, color=color)
         for index in indices:
             if start_index is None:
@@ -57,6 +66,7 @@ class Nucleus:
         for index in self.timestamp_indices:
             if low_index <= index <= high_index:
                 return True
+        # (self, "not in range", low_index, high_index, self.timestamp_indices)
         return False
 
     def min_index(self):
@@ -65,20 +75,25 @@ class Nucleus:
             result = min(self.timestamp_indices)
         return result
 
-    def draw_label(self, on_frame):
+    def draw_label(self, on_frame, in_range=False):
         color = self.html_color()
-        position = self.position
-        index = self.min_index()
-        on_frame.text(index-0.1, position+0.5, str(self.identifier) + " ", align="right", valign="center", color=color, background="#eee")
+        position = self.rectangle_position(in_range=in_range)
+        if position is not None:
+            index = self.min_index()
+            on_frame.text(index-0.1, position+0.5, str(self.identifier) + " ", align="right", valign="center", color=color, background="#eee")
 
-    def draw_link(self, on_frame, nucleus_collection):
+    def draw_link(self, on_frame, nucleus_collection, in_range=False):
         parent_id = self.parent_id
         if parent_id is not None:
             parent = nucleus_collection.get_nucleus(parent_id)
             color = self.html_color()
-            position = self.position
+            position = self.rectangle_position(in_range=in_range)
+            if position is None:
+                return  # not in range -- don't draw
             index = self.min_index()
-            p_position = parent.position
+            p_position = parent.rectangle_position(in_range=in_range)
+            if p_position is None:
+                return # not in range...
             p_index = parent.min_index() #min(parent.timestamp_indices)
             on_frame.line(index+0.5, position+0.5, p_index+0.5, p_position+0.5, color=color, lineWidth=5)
 

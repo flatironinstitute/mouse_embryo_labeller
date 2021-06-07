@@ -47,7 +47,6 @@ class NucleusCollection:
             assert position is not None, "no position for nucleus: %s" % n
             if n.intersects_index_range(low_timestamp_index, high_timestamp_index):
                 result[position] = n
-                n.range_position = position
         return result
 
     def reset_stats(self):
@@ -127,14 +126,14 @@ class NucleusCollection:
         nucleus.last_descendent_position = cursor
         return cursor
 
-    def draw_nuclei(self, on_frame, labels=False):
+    def draw_nuclei(self, on_frame, labels=False, in_range=False):
         for n in self.nuclei:
-            n.draw_rectangles(on_frame)
+            n.draw_rectangles(on_frame, in_range=in_range)
         for n in self.nuclei:
-            n.draw_link(on_frame, self)
+            n.draw_link(on_frame, self, in_range=in_range)
         if labels:
             for n in self.nuclei:
-                n.draw_label(on_frame)
+                n.draw_label(on_frame, in_range=in_range)
 
     def valid_new_name(self, name):
         if name:
