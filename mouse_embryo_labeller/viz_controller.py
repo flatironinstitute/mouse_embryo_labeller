@@ -662,12 +662,15 @@ class VizController:
             self.time_tree.set_highlights(self.current_timestamp_id(), self.selected_nucleus_id)
             self.time_tree.make_frame()
 
-    def set_ids(self, timestamp_id, nucleus_id):
-        self.selected_timestamp_index = self.timestamp_collection.index_of_id(timestamp_id)
-        #self.selected_nucleus_id = nucleus_id
-        self.set_nucleus_id(nucleus_id)
-        self.timestamp_input.value = self.selected_timestamp_index
-        #self.redraw() -- triggered automatically
+    def set_ids(self, timestamp_id=None, nucleus_id=None):
+        if nucleus_id is not None:
+            self.set_nucleus_id(nucleus_id)
+        if timestamp_id is not None:
+            self.selected_timestamp_index = self.timestamp_collection.index_of_id(timestamp_id)
+            self.timestamp_input.value = self.selected_timestamp_index
+            #self.redraw() -- triggered automatically
+        else:
+            self.redraw()
 
     def redraw(self):
         self.calculate_stats()
@@ -709,16 +712,65 @@ class TimeTreeWidget:
         self.controller = controller
         self.widget = None
         self.frame = None
+        self.min_ts_index = 0
+        self.max_ts_index = timestamp_collection.max_index()
+        self.min_position = 0
+        self.max_position = len(nucleus_collection.nuclei) - 1
+        self.position_to_nuclei = None
+        self.nuclei_range_order = None
+
+    def sort_nuclei_in_range(self, min_index, max_index):
+        position_to_nuclei_in_range = self.nucleus_collection.get_position_to_nuclei_in_range(self.min_ts_index, self.max_ts_index)
+        positions = sorted(position_to_nuclei_in_range.keys())
+        range_positions_to_nuclei = {}
+        for (range_index, position) in enumerate(positions):
+            nucleus = position_to_nuclei_in_range[position]
+            range_positions_to_nuclei[range_index] = nucleus
+            nucleus.range_position = range_index
+        return range_positions_to_nuclei
 
     def make_widget(self, width, height):
         from jp_doodle import dual_canvas
+        from jp_doodle import bounded_value_slider
         self.width = width
         self.height = height
         self.widget = dual_canvas.DualCanvasWidget(width=width, height=height)
         self.timestamp_index = 0
         self.nucleus_position = 1
         self.make_frame()
-        return self.widget
+        self.ts_slider = bounded_value_slider.BoundedValueSlider(
+            length=self.width,
+            minimum=0,
+            maximum=self.timestamp_collection.max_index(),
+            initial=self.timestamp_index,
+            on_stop=self.ts_slide, 
+            integral=True, 
+            aspect_ratio=0.05,
+            forbidden="red",
+        )
+        self.ts_slider.set_values(low=self.min_ts_index, high=self.max_ts_index)
+        self.nuclei_in_range = self.sort_nuclei_in_range(self.min_ts_index, self.max_ts_index)
+        self.nuclei_in_range_ids = set(x.identifier for x in self.nuclei_in_range.values())
+        initial_position = 0
+        self.position_slider = bounded_value_slider.BoundedValueSlider(
+            length=self.width,
+            minimum=0,
+            maximum=len(self.nuclei_in_range) - 1,
+            initial=initial_position,
+            on_stop=self.position_slide, 
+            integral=True, 
+            horizontal=False,
+            aspect_ratio=0.04,
+        )
+        top_assembly = widgets.HBox([
+            self.position_slider,
+            self.widget,
+        ])
+        self.assembly = widgets.VBox([
+            top_assembly,
+            self.ts_slider,
+        ])
+        return self.assembly
 
     def make_frame(self):
         widget = self.widget
@@ -727,7 +779,11 @@ class TimeTreeWidget:
         fheight = self.nucleus_collection.height()
         self.frame = self.widget.frame_region(
             minx=0, miny=0, maxx=self.width, maxy=self.height, 
-            frame_minx=0, frame_miny=0, frame_maxx=fwidth, frame_maxy=fheight)
+            frame_minx=self.min_ts_index - 1, 
+            frame_miny=0, 
+            frame_maxx=self.max_ts_index + 1, 
+            frame_maxy=fheight,
+            )
         with self.widget.delay_redraw():
             self.timetamp_highlight = self.frame.frame_rect(self.timestamp_index, 1, w=0.9, h=fheight, fill=False, color="black", name=True)
             ncolor = INVISIBLE
@@ -743,7 +799,21 @@ class TimeTreeWidget:
             self.event_rect = self.frame.frame_rect(0, 1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
             self.event_rect.on("mousemove", self.mouse_move)
             self.event_rect.on("click", self.click)
-            widget.fit()
+            #widget.fit()
+
+    def position_slide(self, positions):
+        pass
+
+    def ts_slide(self, positions):
+        self.min_ts_index = positions["LOW"]
+        self.max_ts_index = positions["HIGH"]
+        old_ts = self.timestamp_index
+        self.timestamp_index = positions["CURRENT"]
+        #self.make_frame()
+        if (old_ts != self.timestamp_index):
+            self.controller.set_ids(timestamp_id=self.timestamp_index)
+        else:
+            self.controller.redraw()
 
     def set_highlights(self, timestamp_id, nucleus_id):
         ids = (timestamp_id, nucleus_id)

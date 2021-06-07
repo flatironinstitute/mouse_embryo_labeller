@@ -22,6 +22,9 @@ class TimestampCollection:
     def get_index(self, ts_id):
         return self.id_sequence.index(ts_id)
 
+    def max_index(self):
+        return len(self.id_sequence) - 1
+
     def id_at_index(self, index):
         s = self.id_sequence
         index = max(0, index)
