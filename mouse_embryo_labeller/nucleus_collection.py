@@ -40,6 +40,16 @@ class NucleusCollection:
         ids = sorted(id2n.keys())
         return [id2n[ident] for ident in ids]
 
+    def get_position_to_nuclei_in_range(self, low_timestamp_index, high_timestamp_index):
+        result = {}
+        for n in self.nuclei:
+            position = n.position
+            assert position is not None, "no position for nucleus: %s" % n
+            if n.intersects_index_range(low_timestamp_index, high_timestamp_index):
+                result[position] = n
+                n.range_position = position
+        return result
+
     def reset_stats(self):
         for n in self.nuclei:
             n.reset_stats()
