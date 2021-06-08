@@ -718,6 +718,7 @@ class TimeTreeWidget:
         self.max_position = len(nucleus_collection.nuclei) - 1
         self.position_to_nuclei = None
         self.nuclei_range_order = None
+        self.assembly = None
 
     def sort_nuclei_in_range(self, min_index, max_index):
         position_to_nuclei_in_range = self.nucleus_collection.get_position_to_nuclei_in_range(self.min_ts_index, self.max_ts_index)
@@ -747,6 +748,7 @@ class TimeTreeWidget:
             integral=True, 
             aspect_ratio=0.05,
             forbidden="red",
+            border=20,
         )
         self.ts_slider.set_values(low=self.min_ts_index, high=self.max_ts_index)
         self.nuclei_in_range = self.sort_nuclei_in_range(self.min_ts_index, self.max_ts_index)
@@ -761,15 +763,20 @@ class TimeTreeWidget:
             integral=True, 
             horizontal=False,
             aspect_ratio=0.04,
+            border=30,
         )
         top_assembly = widgets.HBox([
             self.position_slider,
             self.widget,
         ])
-        self.assembly = widgets.VBox([
+        assembly_children = [
             top_assembly,
             self.ts_slider,
-        ])
+        ]
+        if self.assembly is None:
+            self.assembly = widgets.VBox(assembly_children)
+        else:
+            self.assembly.children = assembly_children
         return self.assembly
 
     def make_frame(self):
