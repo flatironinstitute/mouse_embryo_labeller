@@ -741,6 +741,7 @@ class TimeTreeWidget:
         return result
 
     def compute_nuclei_range(self):
+        self.controller.calculate_stats()   # clean data structures
         self.nuclei_in_range = self.sort_nuclei_in_range()
         self.nuclei_in_range_ids = set(x.identifier for x in self.nuclei_in_range.values())
 
