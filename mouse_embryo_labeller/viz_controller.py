@@ -880,13 +880,13 @@ class TimeTreeWidget:
             max_height = self.nucleus_collection.height() + 2
             max_width = self.timestamp_collection.width() + 2
             self.timetamp_highlight = self.frame.frame_rect(
-                self.timestamp_index, -1, w=0.9, h=max_height, fill=False, color="black", name=True)
+                self.timestamp_index, -1, w=0.9, h=max_height, fill=False, color="black", name=True, lineWidth=3)
             ncolor = INVISIBLE
             if self.controller:
                 if nucleus and (nucleus.range_position is not None):
                     ncolor = "red"
                     self.nucleus_position = nucleus.range_position
-            self.nucleus_highlight = self.frame.frame_rect(-1, self.nucleus_position, w=max_width, h=0.9, fill=False, color=ncolor, name=True)
+            self.nucleus_highlight = self.frame.frame_rect(-1, self.nucleus_position, w=max_width, h=0.9, fill=False, color=ncolor, name=True, lineWidth=3)
             self.nucleus_collection.draw_nuclei(self.frame, in_range=True)
             info = "Time Tree: " + repr((nucleus, ts, self.min_ts_index, self.timestamp_index, self.max_ts_index))
             self.text = self.widget.text(0, 0, info, name=True, events=False)
