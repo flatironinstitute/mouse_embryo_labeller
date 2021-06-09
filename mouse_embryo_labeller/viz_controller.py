@@ -1,4 +1,5 @@
 
+from mouse_embryo_labeller.geometry import positive_extent_info
 from mouse_embryo_labeller.timestamp_collection import load_preprocessed_timestamps
 import ipywidgets as widgets
 from jp_doodle import array_image
@@ -720,7 +721,7 @@ class TimeTreeWidget:
         self.nuclei_range_order = None
         self.assembly = None
 
-    def sort_nuclei_in_range(self, min_index, max_index):
+    def sort_nuclei_in_range(self):
         position_to_nuclei_in_range = self.nucleus_collection.get_position_to_nuclei_in_range(self.min_ts_index, self.max_ts_index)
         positions = sorted(position_to_nuclei_in_range.keys())
         range_positions_to_nuclei = {}
@@ -730,108 +731,197 @@ class TimeTreeWidget:
             nucleus.range_position = range_index
         return range_positions_to_nuclei
 
-    def make_widget(self, width, height):
+    last_range_nucleus = None
+
+    def nucleus_at_range_position(self, int_y):
+        result = self.nuclei_in_range.get(int_y)
+        self.last_range_nucleus = (int_y, result)
+        return result
+
+    def compute_nuclei_range(self):
+        self.nuclei_in_range = self.sort_nuclei_in_range()
+        self.nuclei_in_range_ids = set(x.identifier for x in self.nuclei_in_range.values())
+
+    making_widget = False
+
+    def make_widget(self, width=None, height=None):
         from jp_doodle import dual_canvas
         from jp_doodle import bounded_value_slider
-        self.width = width
-        self.height = height
-        self.widget = dual_canvas.DualCanvasWidget(width=width, height=height)
-        self.timestamp_index = 0
-        self.nucleus_position = 1
-        self.make_frame()
-        self.ts_slider = bounded_value_slider.BoundedValueSlider(
-            length=self.width,
-            minimum=0,
-            maximum=self.timestamp_collection.max_index(),
-            initial=self.timestamp_index,
-            on_stop=self.ts_slide, 
-            integral=True, 
-            aspect_ratio=0.05,
-            forbidden="red",
-            border=20,
-        )
-        self.ts_slider.set_values(low=self.min_ts_index, high=self.max_ts_index)
-        self.nuclei_in_range = self.sort_nuclei_in_range(self.min_ts_index, self.max_ts_index)
-        self.nuclei_in_range_ids = set(x.identifier for x in self.nuclei_in_range.values())
-        initial_position = 0
-        self.position_slider = bounded_value_slider.BoundedValueSlider(
-            length=self.width,
-            minimum=0,
-            maximum=len(self.nuclei_in_range) - 1,
-            initial=initial_position,
-            on_stop=self.position_slide, 
-            integral=True, 
-            horizontal=False,
-            aspect_ratio=0.04,
-            border=30,
-        )
-        top_assembly = widgets.HBox([
-            self.position_slider,
-            self.widget,
-        ])
-        assembly_children = [
-            top_assembly,
-            self.ts_slider,
-        ]
-        if self.assembly is None:
-            self.assembly = widgets.VBox(assembly_children)
-        else:
-            self.assembly.children = assembly_children
-        return self.assembly
+        try:
+            self.making_widget = True
+            self.compute_nuclei_range()
+            ts = self.controller.timestamp()
+            if width is None:
+                width = self.width
+                height = self.height
+            self.width = width
+            self.height = height
+            self.widget = dual_canvas.DualCanvasWidget(width=width, height=height)
+            self.timestamp_index = 0
+            self.nucleus_position = 0
+            if ts is not None:
+                self.timestamp_index = self.timestamp_collection.get_index(ts)
+            #self.make_frame()
+            self.ts_slider = bounded_value_slider.BoundedValueSlider(
+                length=self.width,
+                minimum=0,
+                maximum=self.timestamp_collection.max_index(),
+                initial=self.timestamp_index,
+                on_stop=self.ts_slide, 
+                integral=True, 
+                aspect_ratio=0.05,
+                forbidden="red",
+                border=20,
+                call_on_init=False,
+            )
+            self.ts_slider.set_values(low=self.min_ts_index, high=self.max_ts_index)
+            #self.nuclei_in_range = self.sort_nuclei_in_range(self.min_ts_index, self.max_ts_index)
+            #self.nuclei_in_range_ids = set(x.identifier for x in self.nuclei_in_range.values())
+            nuclei_range_positions = list(self.nuclei_in_range.keys())
+            initial_position = 0
+            nucleus = self.controller.get_nucleus()
+            if (nucleus is not None) and (nucleus.identifier in self.nuclei_in_range_ids):
+                initial_position = nucleus.range_position
+            low_position = 0
+            high_position = 1
+            if nuclei_range_positions:
+                low_position = min(nuclei_range_positions)
+                high_position = max(nuclei_range_positions)
+                if low_position == high_position:
+                    high_position = low_position + 1
+            self.position_slider = bounded_value_slider.BoundedValueSlider(
+                length=self.width,
+                minimum=low_position,
+                maximum=high_position,
+                initial=initial_position,
+                on_stop=self.position_slide, 
+                integral=True, 
+                horizontal=False,
+                aspect_ratio=0.04,
+                border=30,
+            )
+            if self.min_position < low_position:
+                self.min_position = low_position
+            if self.min_position > high_position:
+                self.min_position = high_position
+            if self.max_position < self.min_position:
+                self.max_position = self.min_position
+            if self.max_position > high_position:
+                self.max_position = high_position
+            if self.max_position == self.min_position:
+                self.max_position = self.min_position + 1  # avoid div 0
+            self.position_slider.set_values(low=self.min_position, high=self.max_position)
+            self.make_frame()
+            widget = self.widget
+            position_slider = self.position_slider
+            ts_slider = self.ts_slider
+            if False:  # DEBUGGING
+                widget = self.widget.debugging_display()
+                position_slider = self.position_slider.debugging_display()
+                ts_slider = self.ts_slider.debugging_display()
+            top_assembly = widgets.HBox([
+                position_slider,
+                widget,
+            ])
+            assembly_children = [
+                top_assembly,
+                ts_slider,
+            ]
+            if self.assembly is None:
+                self.assembly = widgets.VBox(assembly_children)
+            else:
+                self.assembly.children = assembly_children
+            return self.assembly
+        finally:
+            self.making_widget = False
 
     def make_frame(self):
+        nucleus = self.controller.get_nucleus()
+        ts = self.controller.timestamp()
         widget = self.widget
         widget.reset_canvas()
-        fwidth = self.timestamp_collection.width()
-        fheight = self.nucleus_collection.height()
+        #fwidth = self.timestamp_collection.width()
+        nuclei_range_positions = list(self.nuclei_in_range.keys())
+        #fheight = max(nuclei_range_positions)
+        frame_minx = self.min_ts_index - 1
+        frame_maxx = self.max_ts_index + 1
+        frame_miny = self.min_position - 1
+        frame_maxy = self.max_position + 1
+        fheight = frame_maxy - frame_miny
+        fwidth = frame_maxx - frame_minx
         self.frame = self.widget.frame_region(
             minx=0, miny=0, maxx=self.width, maxy=self.height, 
-            frame_minx=self.min_ts_index - 1, 
-            frame_miny=0, 
-            frame_maxx=self.max_ts_index + 1, 
-            frame_maxy=fheight,
+            frame_minx=frame_minx, 
+            frame_miny=frame_miny, 
+            frame_maxx=frame_maxx, 
+            frame_maxy=frame_maxy,
             )
         with self.widget.delay_redraw():
-            self.timetamp_highlight = self.frame.frame_rect(self.timestamp_index, 1, w=0.9, h=fheight, fill=False, color="black", name=True)
+            self.timetamp_highlight = self.frame.frame_rect(
+                self.timestamp_index, 0, w=0.9, h=fheight, fill=False, color="black", name=True)
             ncolor = INVISIBLE
             if self.controller:
-                nucleus = self.controller.get_nucleus()
                 if nucleus:
                     ncolor = "red"
                     self.nucleus_position = nucleus.position
             self.nucleus_highlight = self.frame.frame_rect(0, self.nucleus_position, w=fwidth, h=0.9, fill=False, color=ncolor, name=True)
-            self.nucleus_collection.draw_nuclei(self.frame)
-            self.text = self.frame.text(0, fheight+1.2, "Time tree diagram", name=True)
+            self.nucleus_collection.draw_nuclei(self.frame, in_range=True)
+            self.text = self.widget.text(0, 0, "Time tree diagram", name=True, events=False)
             # invisible event rectangle
-            self.event_rect = self.frame.frame_rect(0, 1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
+            self.event_rect = self.frame.frame_rect(frame_minx, -1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
             self.event_rect.on("mousemove", self.mouse_move)
             self.event_rect.on("click", self.click)
             #widget.fit()
 
     def position_slide(self, positions):
-        pass
+        if self.making_widget:
+            return  # ignore callbacks before
+        old = (self.min_position, self.max_position)
+        self.min_position = positions["LOW"]
+        self.max_position = positions["HIGH"]
+        new = (self.min_position, self.max_position)
+        curr = positions["CURRENT"]
+        nucleus = self.nucleus_at_range_position(curr)
+        if nucleus is not None:
+            old_nucleus = self.controller.get_nucleus()
+            if nucleus is not old_nucleus:
+                self.controller.set_ids(nucleus_id=nucleus.identifier)
+            elif old != new:
+                self.make_widget()
+        else:
+            if old != new:
+                self.make_widget()
 
     def ts_slide(self, positions):
+        old = (self.min_ts_index, self.max_ts_index)
         self.min_ts_index = positions["LOW"]
         self.max_ts_index = positions["HIGH"]
+        new = (self.min_ts_index, self.max_ts_index)
         old_ts = self.timestamp_index
         self.timestamp_index = positions["CURRENT"]
         #self.make_frame()
         if (old_ts != self.timestamp_index):
             self.controller.set_ids(timestamp_id=self.timestamp_index)
         else:
-            self.controller.redraw()
+            #self.controller.redraw()
+            if old != new:
+                #print("old", old, "new", new)
+                self.make_widget()
 
     def set_highlights(self, timestamp_id, nucleus_id):
+        self.compute_nuclei_range()
         ids = (timestamp_id, nucleus_id)
         self.text.change(text="set_highlignts: " +repr(ids))
         if nucleus_id:
             nucleus = self.nucleus_collection.get_nucleus(nucleus_id)
-            self.nucleus_position = nucleus.position
-            self.nucleus_highlight.change(y=nucleus.position, color="blue")
+            self.nucleus_position = nucleus.range_position
+            if self.nucleus_position is not None:
+                self.nucleus_highlight.change(y=self.nucleus_position, color="blue")
+            else:
+                self.nucleus_highlight.change(color=INVISIBLE)
         else:
             self.nucleus_highlight.change(color=INVISIBLE)
-        self.timestamp_index = self.timestamp_collection.get_index(timestamp_id)
+        self.timestamp_index = self.timestamp_collection.index_of_id(timestamp_id)
         self.timetamp_highlight.change(x=self.timestamp_index, color="red")
 
     def ids_at(self, x, y):

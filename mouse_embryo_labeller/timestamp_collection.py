@@ -19,8 +19,8 @@ class TimestampCollection:
     def width(self):
         return len(self.id_sequence)
 
-    def get_index(self, ts_id):
-        return self.id_sequence.index(ts_id)
+    def get_index(self, ts):
+        return self.id_sequence.index(ts.identifier)
 
     def max_index(self):
         return len(self.id_sequence) - 1
