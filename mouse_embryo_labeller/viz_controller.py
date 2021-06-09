@@ -815,7 +815,8 @@ class TimeTreeWidget:
             widget = self.widget
             position_slider = self.position_slider
             ts_slider = self.ts_slider
-            if False:  # DEBUGGING
+            display_debug = False
+            if display_debug:  # DEBUGGING
                 widget = self.widget.debugging_display()
                 position_slider = self.position_slider.debugging_display()
                 ts_slider = self.ts_slider.debugging_display()
@@ -841,34 +842,37 @@ class TimeTreeWidget:
         widget = self.widget
         widget.reset_canvas()
         #fwidth = self.timestamp_collection.width()
-        nuclei_range_positions = list(self.nuclei_in_range.keys())
+        #nuclei_range_positions = list(self.nuclei_in_range.keys())
         #fheight = max(nuclei_range_positions)
         frame_minx = self.min_ts_index - 1
         frame_maxx = self.max_ts_index + 1
         frame_miny = self.min_position - 1
         frame_maxy = self.max_position + 1
-        fheight = frame_maxy - frame_miny
-        fwidth = frame_maxx - frame_minx
+        #fheight = frame_maxy - frame_miny
+        #fwidth = frame_maxx - frame_minx
+        margin = 0.2
         self.frame = self.widget.frame_region(
             minx=0, miny=0, maxx=self.width, maxy=self.height, 
-            frame_minx=frame_minx, 
-            frame_miny=frame_miny, 
-            frame_maxx=frame_maxx, 
-            frame_maxy=frame_maxy,
+            frame_minx=frame_minx - margin, 
+            frame_miny=frame_miny - margin, 
+            frame_maxx=frame_maxx + margin, 
+            frame_maxy=frame_maxy + margin,
             )
         with self.widget.delay_redraw():
+            max_height = self.nucleus_collection.height() + 2
+            max_width = self.timestamp_collection.width() + 2
             self.timetamp_highlight = self.frame.frame_rect(
-                self.timestamp_index, 0, w=0.9, h=fheight, fill=False, color="black", name=True)
+                self.timestamp_index, -1, w=0.9, h=max_height, fill=False, color="black", name=True)
             ncolor = INVISIBLE
             if self.controller:
-                if nucleus:
+                if nucleus and (nucleus.range_position is not None):
                     ncolor = "red"
-                    self.nucleus_position = nucleus.position
-            self.nucleus_highlight = self.frame.frame_rect(0, self.nucleus_position, w=fwidth, h=0.9, fill=False, color=ncolor, name=True)
+                    self.nucleus_position = nucleus.range_position
+            self.nucleus_highlight = self.frame.frame_rect(-1, self.nucleus_position, w=max_width, h=0.9, fill=False, color=ncolor, name=True)
             self.nucleus_collection.draw_nuclei(self.frame, in_range=True)
             self.text = self.widget.text(0, 0, "Time tree diagram", name=True, events=False)
             # invisible event rectangle
-            self.event_rect = self.frame.frame_rect(frame_minx, -1, fwidth, fheight, color="rgba(0,0,0,0)", name=True)
+            self.event_rect = self.frame.frame_rect(-1, -1, max_width, max_height, color="rgba(0,0,0,0)", name=True)
             self.event_rect.on("mousemove", self.mouse_move)
             self.event_rect.on("click", self.click)
             #widget.fit()
@@ -897,6 +901,14 @@ class TimeTreeWidget:
         self.min_ts_index = positions["LOW"]
         self.max_ts_index = positions["HIGH"]
         new = (self.min_ts_index, self.max_ts_index)
+        if (old != new):
+            # reset the position range
+            self.compute_nuclei_range()
+            self.min_position = 0
+            self.max_position = 0
+            nuclei_range_positions = list(self.nuclei_in_range.keys())
+            if nuclei_range_positions:
+                self.max_position = max(nuclei_range_positions)
         old_ts = self.timestamp_index
         self.timestamp_index = positions["CURRENT"]
         #self.make_frame()
@@ -926,10 +938,15 @@ class TimeTreeWidget:
 
     def ids_at(self, x, y):
         timestamp_id = self.timestamp_collection.id_at_index(int(x))
-        nucleus_id = self.nucleus_collection.id_at_position(int(y))
+        #nucleus_id = self.nucleus_collection.id_at_position(int(y))
+        nucleus_id = None
+        nucleus = self.nucleus_at_range_position(int(y))
+        if nucleus is not None:
+            nucleus_id = nucleus.identifier
         return (timestamp_id, nucleus_id)
 
     def click(self, event):
+        self.compute_nuclei_range()
         position = event['model_location']
         x = int(position["x"])
         y = int(position["y"])
