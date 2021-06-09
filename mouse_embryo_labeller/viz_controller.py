@@ -660,8 +660,10 @@ class VizController:
 
     def check_highlights(self):
         if self.show_tree_view:
-            self.time_tree.set_highlights(self.current_timestamp_id(), self.selected_nucleus_id)
-            self.time_tree.make_frame()
+            #self.time_tree.set_highlights(self.current_timestamp_id(), self.selected_nucleus_id)
+            #self.time_tree.make_frame()
+            # just redraw the time tree
+            self.time_tree.make_widget()
 
     def set_ids(self, timestamp_id=None, nucleus_id=None):
         if nucleus_id is not None:
@@ -761,6 +763,21 @@ class TimeTreeWidget:
             self.nucleus_position = 0
             if ts is not None:
                 self.timestamp_index = self.timestamp_collection.get_index(ts)
+                # check boundaries
+                reset = False
+                if self.min_ts_index > self.timestamp_index:
+                    self.min_ts_index = self.timestamp_index
+                    reset = True
+                if self.max_ts_index < self.timestamp_index:
+                    self.max_ts_index = self.timestamp_index
+                    reset = True
+                self.reset_timestamps = (ts, self.min_ts_index, self.timestamp_index, self.max_ts_index) # debug
+                if reset:
+                    self.reset_position_extrema()
+            else:
+                raise ValueError("no timestamp?") # debug
+                pass
+            self.controller.info.value = "timestamps: <br>" + repr((self.min_ts_index, self.timestamp_index, self.max_ts_index))
             #self.make_frame()
             self.ts_slider = bounded_value_slider.BoundedValueSlider(
                 length=self.width,
@@ -870,7 +887,8 @@ class TimeTreeWidget:
                     self.nucleus_position = nucleus.range_position
             self.nucleus_highlight = self.frame.frame_rect(-1, self.nucleus_position, w=max_width, h=0.9, fill=False, color=ncolor, name=True)
             self.nucleus_collection.draw_nuclei(self.frame, in_range=True)
-            self.text = self.widget.text(0, 0, "Time tree diagram", name=True, events=False)
+            info = "Time Tree: " + repr((nucleus, ts, self.min_ts_index, self.timestamp_index, self.max_ts_index))
+            self.text = self.widget.text(0, 0, info, name=True, events=False)
             # invisible event rectangle
             self.event_rect = self.frame.frame_rect(-1, -1, max_width, max_height, color="rgba(0,0,0,0)", name=True)
             self.event_rect.on("mousemove", self.mouse_move)
@@ -896,19 +914,22 @@ class TimeTreeWidget:
             if old != new:
                 self.make_widget()
 
+    def reset_position_extrema(self):
+        # reset the position range
+        self.compute_nuclei_range()
+        self.min_position = 0
+        self.max_position = 0
+        nuclei_range_positions = list(self.nuclei_in_range.keys())
+        if nuclei_range_positions:
+            self.max_position = max(nuclei_range_positions)
+
     def ts_slide(self, positions):
         old = (self.min_ts_index, self.max_ts_index)
         self.min_ts_index = positions["LOW"]
         self.max_ts_index = positions["HIGH"]
         new = (self.min_ts_index, self.max_ts_index)
         if (old != new):
-            # reset the position range
-            self.compute_nuclei_range()
-            self.min_position = 0
-            self.max_position = 0
-            nuclei_range_positions = list(self.nuclei_in_range.keys())
-            if nuclei_range_positions:
-                self.max_position = max(nuclei_range_positions)
+            self.reset_position_extrema()
         old_ts = self.timestamp_index
         self.timestamp_index = positions["CURRENT"]
         #self.make_frame()
