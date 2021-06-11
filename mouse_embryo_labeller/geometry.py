@@ -392,16 +392,18 @@ def interpolate_timestamp_collection(tsc, include_orphans=False):
 class GeometryFileNotFound(FileNotFoundError):
     "Geometry file not found exception"
 
-def store_timestamp_collection_geometry(tsc, to_folder, filename="timestamp_collection_geometry.json"):
+def store_timestamp_collection_geometry(tsc, to_folder, filename="timestamp_collection_geometry.json", verbose=True):
     import os, json
     to_path = os.path.join(to_folder, filename)
     geometry = tsc.geometry
     if geometry is None:
-        print ("calculating timestamp collection geometry -- this may take a while...")
+        if verbose:
+            print ("calculating timestamp collection geometry -- this may take a while...")
         geometry = timestamp_collection_geometry(tsc)
     f = open(to_path, "w")
     json.dump(geometry, f)
-    print("saved time stamp geometry to", to_path)
+    if verbose:
+        print("saved time stamp geometry to", to_path)
 
 def load_timestamp_collection_geometry(from_folder, filename="timestamp_collection_geometry.json"):
     import os, json
@@ -410,6 +412,28 @@ def load_timestamp_collection_geometry(from_folder, filename="timestamp_collecti
         raise GeometryFileNotFound("no such file: " + to_path)
     f = open(to_path)
     return json.load(f)
+
+def load_or_create_geometry(folder, filename="timestamp_collection_geometry.json", verbose=True, include_orphans=False):
+    from mouse_embryo_labeller import tools
+    try:
+        g = load_timestamp_collection_geometry(folder, filename=filename)
+    except GeometryFileNotFound as e:
+        if verbose:
+            print ("Failed to load geometry from file: " + repr(e))
+    else:
+        if verbose:
+            print ("loaded geometry from folder", repr(folder), "file", repr(filename))
+        TI = TimeStampCollectionInterpolator(g, include_orphans=include_orphans)
+        return TI
+    if verbose:
+        print("Fallback: Loading collections.")
+    nc = tools.get_example_nucleus_collection(folder)
+    tsc = tools.get_example_timestamp_collection(folder, nc)
+    if verbose:
+        print("Calculating geometry.  This may taka a while...")
+    TI = interpolate_timestamp_collection(tsc, include_orphans=include_orphans)
+    store_timestamp_collection_geometry(tsc, folder, verbose=verbose)
+    return TI
 
 class TimeStampCollectionInterpolator:
 

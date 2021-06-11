@@ -12,6 +12,8 @@ class TimestampCollection:
     def __init__(self):
         self.id_to_timestamp = {}
         self.id_sequence = []
+        # slot for geometry calculated externally
+        self.geometry = None
 
     def reset_stats(self):
         pass  # placeholder -- nothing to be done here yet.
