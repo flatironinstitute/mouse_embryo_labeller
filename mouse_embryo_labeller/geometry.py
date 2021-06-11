@@ -264,18 +264,18 @@ def draw_ts_geometry(geometry, frame3d, default_color=[0,0,0], distortion=[3,1,1
             color = default_color
         draw_octohedron(frame3d, center, dimensions, color, distortion=distortion)
 
-def interpolate_timestamps(ts0, ts1):
-    return TimeStampInterpolator(timestamp_geometry(ts0), timestamp_geometry(ts1))
+def interpolate_timestamps(ts0, ts1, include_orphans=True):
+    return TimeStampInterpolator(timestamp_geometry(ts0), timestamp_geometry(ts1), include_orphans=include_orphans)
 
 class TimeStampInterpolator:
     
-    def __init__(self, ts0_geometry, ts1_geometry, pixels=700, distortion=[3,1,1]):
+    def __init__(self, ts0_geometry, ts1_geometry, pixels=700, distortion=[3,1,1], include_orphans=True):
         self.pixels = pixels
         self.distortion = distortion
         self.ts0_geometry = ts0_geometry
         self.ts1_geometry = ts1_geometry
         self.unified = unify_slicing_info(ts0_geometry, ts1_geometry)
-        self.make_pairings()
+        self.make_pairings(include_orphans=include_orphans)
 
     def make_pairings(self, include_orphans=True):
         paired0 = set()
@@ -303,14 +303,15 @@ class TimeStampInterpolator:
                 pairs.append(pair)
                 paired0.add(label0)
                 paired1.add(label1)
-        if include_orphans:
-            for (label, descr) in labels0.items():
-                if label not in paired0:
+        for (label, descr) in labels0.items():
+            if label not in paired0:
+                if include_orphans or (descr[NUCLEUS_ID] is not None):
                     point = center_point(descr)
                     pair = (descr, point)
                     pairs.append(pair)
-            for (label, descr) in labels1.items():
-                if label not in paired1:
+        for (label, descr) in labels1.items():
+            if label not in paired1:
+                if include_orphans or (descr[NUCLEUS_ID] is not None):
                     point = center_point(descr)
                     pair = (point, descr)
                     pairs.append(pair)
@@ -338,6 +339,7 @@ class TimeStampInterpolator:
             orientation='horizontal',
             readout=True,
             readout_format='.2f',
+            layout=dict(width=str(self.pixels) + "px")
         )
         self.slider.observe(self.slide_interpolation, "value")
         self.assembly = widgets.VBox([
@@ -351,7 +353,7 @@ class TimeStampInterpolator:
 
     def slide_interpolation(self, change):
         value = self.slider.value
-        print("slide", value)
+        #print("slide", value)
         interpolation = self.interpolate_pairings(value)
         #pprint(interpolation)
         self.last_interpolation = interpolation
@@ -366,6 +368,98 @@ class TimeStampInterpolator:
         #distortion = self.distortion
         from jp_doodle import nd_frame
         geometry = self.unified
+        self.distortion = np.array(self.distortion, dtype=np.float)
+        self.center = np.array(geometry[CENTER])
+        self.dimensions = np.array(geometry[DIMENSIONS])
+        self.center_d = self.center * self.distortion
+        #radius = geometry[RADIUS]
+        self.radius = max(self.dimensions * self.distortion)
+        swatch = nd_frame.swatch3d(pixels=pixels, model_height=self.radius * 2, auto_show=False)
+        swatch.orbit(center3d=self.center_d, radius=self.radius, shift2d=(-0.25 * self.radius, -0.2 * self.radius))
+        swatch.orbit_all(center3d=self.center_d, radius=self.radius)
+        draw_box(swatch, self.dimensions, self.center, self.distortion)
+        #draw_ts_geometry(geometry, swatch, distortion=distortion)
+        swatch.fit(0.6)
+        self.swatch = swatch
+        self.canvas = swatch.in_canvas
+        return swatch
+
+def interpolate_timestamp_collection(tsc, include_orphans=False):
+    return TimeStampCollectionInterpolator(timestamp_collection_geometry(tsc))
+
+class TimeStampCollectionInterpolator:
+
+    def __init__(self, geometry, pixels=700, distortion=[3,1,1], include_orphans=False):
+        self.pixels = pixels
+        self.distortion = distortion
+        self.geometry = geometry
+        self.include_orphans = include_orphans
+        self.make_timestamp_interpolators()
+
+    def make_timestamp_interpolators(self):
+        last_ts_geometry = None
+        interpolators = []
+        # get integer indexed timestamps
+        ts_index = {}
+        for (ts_id, ts_geometry) in self.geometry[TIMESTAMPS].items():
+            ts_index[int(ts_id)] = ts_geometry
+        for i in sorted(ts_index.keys()):
+            ts_geometry = ts_index[i]
+            if last_ts_geometry is not None:
+                interpolator = TimeStampInterpolator(last_ts_geometry, ts_geometry, include_orphans=self.include_orphans)
+                interpolators.append(interpolator)
+            last_ts_geometry = ts_geometry
+        assert len(interpolators) > 0, "nothing to interpolate?"
+        self.interpolators = interpolators
+
+    def make_assembly(self):
+        # xxx cut/paste -- could unify
+        import ipywidgets as widgets
+        self.get_swatch()
+        self.slider = widgets.FloatSlider(
+            value=0,
+            min=0.0,
+            max=1.0 * len(self.interpolators),
+            step=0.05,
+            description='Interpolation:',
+            disabled=False,
+            continuous_update=True,
+            orientation='horizontal',
+            readout=True,
+            readout_format='.2f',
+            layout=dict(width=str(self.pixels) + "px")
+        )
+        self.slider.observe(self.slide_interpolation, "value")
+        self.assembly = widgets.VBox([
+            self.canvas,
+            self.slider,
+        ])
+        self.slide_interpolation(None)
+        return self.assembly
+
+    def slide_interpolation(self, change):
+        interpolators = self.interpolators
+        nint = len(interpolators)
+        value = self.slider.value
+        index = min(nint - 1, int(value))
+        lambda1 = value - index
+        interpolator = interpolators[index]
+        #print("slide", value)
+        interpolation = interpolator.interpolate_pairings(lambda1)
+        #pprint(interpolation)
+        self.last_interpolation = interpolation
+        with self.swatch.in_canvas.delay_redraw():
+            self.swatch.reset()
+            draw_box(self.swatch, self.dimensions, self.center, self.distortion)
+            draw_ts_geometry(interpolation, self.swatch)
+            self.swatch.orbit_all(center3d=self.center_d, radius=self.radius)
+  
+    def get_swatch(self):
+        # xxx cut/paste -- could unify
+        pixels = self.pixels
+        #distortion = self.distortion
+        from jp_doodle import nd_frame
+        geometry = self.geometry
         self.distortion = np.array(self.distortion, dtype=np.float)
         self.center = np.array(geometry[CENTER])
         self.dimensions = np.array(geometry[DIMENSIONS])
