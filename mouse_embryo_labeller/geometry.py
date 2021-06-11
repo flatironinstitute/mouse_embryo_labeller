@@ -269,7 +269,7 @@ def interpolate_timestamps(ts0, ts1, include_orphans=True):
 
 class TimeStampInterpolator:
     
-    def __init__(self, ts0_geometry, ts1_geometry, pixels=700, distortion=[3,1,1], include_orphans=True):
+    def __init__(self, ts0_geometry, ts1_geometry, pixels=1000, distortion=[3,1,1], include_orphans=True):
         self.pixels = pixels
         self.distortion = distortion
         self.ts0_geometry = ts0_geometry
@@ -325,8 +325,10 @@ class TimeStampInterpolator:
         result[LABELS] = labels
         return result
 
-    def make_assembly(self):
+    def make_assembly(self, pixels=None):
         import ipywidgets as widgets
+        if pixels is not None:
+            self.pixels = pixels
         self.get_swatch()
         self.slider = widgets.FloatSlider(
             value=0,
@@ -379,13 +381,35 @@ class TimeStampInterpolator:
         swatch.orbit_all(center3d=self.center_d, radius=self.radius)
         draw_box(swatch, self.dimensions, self.center, self.distortion)
         #draw_ts_geometry(geometry, swatch, distortion=distortion)
-        swatch.fit(0.6)
+        swatch.fit(0.8)
         self.swatch = swatch
         self.canvas = swatch.in_canvas
         return swatch
 
 def interpolate_timestamp_collection(tsc, include_orphans=False):
-    return TimeStampCollectionInterpolator(timestamp_collection_geometry(tsc))
+    return TimeStampCollectionInterpolator(timestamp_collection_geometry(tsc), include_orphans=include_orphans)
+
+class GeometryFileNotFound(FileNotFoundError):
+    "Geometry file not found exception"
+
+def store_timestamp_collection_geometry(tsc, to_folder, filename="timestamp_collection_geometry.json"):
+    import os, json
+    to_path = os.path.join(to_folder, filename)
+    geometry = tsc.geometry
+    if geometry is None:
+        print ("calculating timestamp collection geometry -- this may take a while...")
+        geometry = timestamp_collection_geometry(tsc)
+    f = open(to_path, "w")
+    json.dump(geometry, f)
+    print("saved time stamp geometry to", to_path)
+
+def load_timestamp_collection_geometry(from_folder, filename="timestamp_collection_geometry.json"):
+    import os, json
+    to_path = os.path.join(from_folder, filename)
+    if not os.path.isfile(to_path):
+        raise GeometryFileNotFound("no such file: " + to_path)
+    f = open(to_path)
+    return json.load(f)
 
 class TimeStampCollectionInterpolator:
 
@@ -412,9 +436,11 @@ class TimeStampCollectionInterpolator:
         assert len(interpolators) > 0, "nothing to interpolate?"
         self.interpolators = interpolators
 
-    def make_assembly(self):
+    def make_assembly(self, pixels=None):
         # xxx cut/paste -- could unify
         import ipywidgets as widgets
+        if pixels is not None:
+            self.pixels = pixels
         self.get_swatch()
         self.slider = widgets.FloatSlider(
             value=0,
@@ -471,7 +497,7 @@ class TimeStampCollectionInterpolator:
         swatch.orbit_all(center3d=self.center_d, radius=self.radius)
         draw_box(swatch, self.dimensions, self.center, self.distortion)
         #draw_ts_geometry(geometry, swatch, distortion=distortion)
-        swatch.fit(0.6)
+        swatch.fit(0.8)
         self.swatch = swatch
         self.canvas = swatch.in_canvas
         return swatch
