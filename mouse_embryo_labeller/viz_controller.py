@@ -880,7 +880,7 @@ class TimeTreeWidget:
             max_height = self.nucleus_collection.height() + 2
             max_width = self.timestamp_collection.width() + 2
             self.timetamp_highlight = self.frame.frame_rect(
-                self.timestamp_index, -1, w=0.9, h=max_height, fill=False, color="black", name=True, lineWidth=3)
+                self.timestamp_index, -1, w=0.9, h=max_height, fill=False, color="#883", name=True, lineWidth=3)
             ncolor = INVISIBLE
             if self.controller:
                 if nucleus and (nucleus.range_position is not None):
