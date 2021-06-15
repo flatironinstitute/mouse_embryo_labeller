@@ -463,8 +463,11 @@ class TimeStampCollectionInterpolator:
     def make_assembly(self, pixels=None):
         # xxx cut/paste -- could unify
         import ipywidgets as widgets
+        from jp_doodle.data_tables import widen_notebook
+        widen_notebook()
         if pixels is not None:
             self.pixels = pixels
+        self.info = widgets.HTML(value="Simple 3d view.")
         self.get_swatch()
         self.slider = widgets.FloatSlider(
             value=0,
@@ -481,7 +484,8 @@ class TimeStampCollectionInterpolator:
         )
         self.slider.observe(self.slide_interpolation, "value")
         self.assembly = widgets.VBox([
-            self.canvas,
+            self.info,
+            self.canvas.debugging_display(),
             self.slider,
         ])
         self.slide_interpolation(None)
