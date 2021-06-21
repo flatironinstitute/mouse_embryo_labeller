@@ -22,6 +22,7 @@ class Nucleus:
         self.children = None
         self.width = None
         self.position = None
+        self.rectangle_end = 0
         self.last_descendent_position = None
         self.timestamp_indices = set()
         self.range_position = None
@@ -46,6 +47,7 @@ class Nucleus:
         last_index = None
         def emit_rectangle():
             w = last_index - start_index + 0.8
+            self.rectangle_end = max(self.rectangle_end, w + start_index)
             # ("draw", self, "at", dict(x=start_index, y=position+0.25, h=0.5, w=w, color=color))
             on_frame.frame_rect(x=start_index, y=position+0.25, h=0.5, w=w, color=color)
         for index in indices:
@@ -94,7 +96,8 @@ class Nucleus:
             p_position = parent.rectangle_position(in_range=in_range)
             if p_position is None:
                 return # not in range...
-            p_index = parent.min_index() #min(parent.timestamp_indices)
+            #p_index = parent.min_index() #min(parent.timestamp_indices)
+            p_index = parent.rectangle_end
             on_frame.line(index+0.5, position+0.5, p_index+0.5, p_position+0.5, color=color, lineWidth=5)
 
     def add_timestamp_index(self, index):
