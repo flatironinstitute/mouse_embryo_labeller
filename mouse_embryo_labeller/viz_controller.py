@@ -1,5 +1,5 @@
 
-from mouse_embryo_labeller.geometry import positive_extent_info
+from mouse_embryo_labeller.geometry import positive_extent_info, timestamp_collection_geometry
 from mouse_embryo_labeller.timestamp_collection import load_preprocessed_timestamps
 import ipywidgets as widgets
 from jp_doodle import array_image
@@ -168,12 +168,15 @@ class VizController:
         reparent_assembly = self.nucleus_collection.reparent_assembly()
         join_assembly = self.nucleus_collection.join_assembly()
         split_assembly = self.nucleus_collection.split_assembly()
+        self.show_all_tracks_button = widgets.Button(description="Show All Tracks", disabled=False)
+        self.show_all_tracks_button.on_click(self.show_all_tracks_click)
         info_area = widgets.HBox([
             info_area1, 
             nucleus_info_area,
             reparent_assembly,
             join_assembly,
             split_assembly,
+            self.show_all_tracks_button,
             ])
         #self.prev_button = widgets.Button(description="< Prev")
         #self.prev_button.on_click(self.go_previous)
@@ -390,6 +393,12 @@ class VizController:
         # redisplay...
         self.make_widget()
         self.info.value = "reverted <br> " + repr(most_recent)
+
+    def show_all_tracks_click(self, button):
+        self.time_tree.reset_parameters()
+        self.calculate_stats()
+        self.nucleus_collection.set_widget_options(callback=None, selected=None)
+        self.redraw()
 
     def snapshot_click(self, button, destination=None):
         from mouse_embryo_labeller import tools
@@ -728,6 +737,12 @@ class TimeTreeWidget:
         self.controller = controller
         self.widget = None
         self.frame = None
+        self.assembly = None
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        timestamp_collection = self.timestamp_collection
+        nucleus_collection = self.nucleus_collection
         self.min_ts_index = 0
         self.max_ts_index = timestamp_collection.max_index()
         nucleus_collection.assign_positions(check_children=True)
@@ -735,7 +750,6 @@ class TimeTreeWidget:
         self.max_position = nucleus_collection.last_position # len(nucleus_collection.nuclei)# - 1
         self.position_to_nuclei = None
         self.nuclei_range_order = None
-        self.assembly = None
 
     def sort_nuclei_in_range(self):
         position_to_nuclei_in_range = self.nucleus_collection.get_position_to_nuclei_in_range(self.min_ts_index, self.max_ts_index)
