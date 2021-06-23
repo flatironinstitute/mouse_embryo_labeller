@@ -92,6 +92,7 @@ class VizController:
         ts = self.timestamp()
         self.selected_layer = ts.nlayers() - 1
         self.selected_nucleus_id = None
+        self.time_tree = TimeTreeWidget(self.nucleus_collection, self.timestamp_collection, self)
 
     def calculate_stats(self):
         self.nucleus_collection.reset_stats()
