@@ -140,17 +140,18 @@ class Timestamp:
     def get_nucleus(self, label):
         return self.label_to_nucleus.get(label)
 
-    def colorization_mapping(self, zero_map=(0,0,0), unassigned=(100,100,100)):
+    def colorization_mapping(self, id_to_nucleus=None, zero_map=(0,0,0), unassigned=(100,100,100)):
         u = self.unique_labels
         ln = max(u) + 1
         result = np.zeros((ln, 3), dtype=np.int)
         n = self.label_to_nucleus
         for i in range(ln):
             nucleus = n.get(i)
-            if nucleus is None:
-                result[i] = unassigned
-            else:
-                result[i] = nucleus.color
+            color_choice = unassigned
+            if nucleus is not None:
+                if (id_to_nucleus is None) or (nucleus.identifier in id_to_nucleus):
+                    color_choice = nucleus.color
+            result[i] = color_choice
         result[0] = zero_map
         return result
 
