@@ -98,7 +98,7 @@ class Nucleus:
                 return # not in range...
             #p_index = parent.min_index() #min(parent.timestamp_indices)
             p_index = parent.rectangle_end
-            on_frame.line(index+0.5, position+0.5, p_index+0.5, p_position+0.5, color=color, lineWidth=5)
+            on_frame.line(index+0.5, position+0.5, p_index, p_position+0.5, color=color, lineWidth=5)
 
     def add_timestamp_index(self, index):
         self.timestamp_indices.add(index)
