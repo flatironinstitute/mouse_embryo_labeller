@@ -34,9 +34,10 @@ class NucleusCollection:
             self.add_nucleus(n)
         self.reset_stats()
 
-    def sorted_nuclei(self):
+    def sorted_nuclei(self, id2n=None):
         "nuclei sorted by increasing id"
-        id2n = self.id_to_nucleus
+        if id2n is None:
+            id2n = self.id_to_nucleus
         ids = sorted(id2n.keys())
         return [id2n[ident] for ident in ids]
 
@@ -259,13 +260,15 @@ class NucleusCollection:
 
     none_option = "NONE"
 
-    def set_widget_options(self, callback, selected=None, widget=None):
+    def set_widget_options(self, callback, selected=None, widget=None, id_to_nucleus=None):
         if widget is None:
             widget = self.widget
+        if id_to_nucleus is None:
+            id_to_nucleus = self.controller.id_to_visible_nuclei()
         assert widget is not None, "no widget initialized"
         nucleus = self.get_selected_nucleus()
         nulloption = '<option value="NONE">NONE</option>'
-        nuclei = self.sorted_nuclei()
+        nuclei = self.sorted_nuclei(id2n=id_to_nucleus)
         options = [n.html_option() for n in nuclei]
         identifiers = [n.identifier for n in nuclei]
         options = [nulloption] + options
