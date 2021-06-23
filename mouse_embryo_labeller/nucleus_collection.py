@@ -248,7 +248,7 @@ class NucleusCollection:
                 if (selected) {
                     element.info.html("at " + selected + " of " + ln1);
                 } else {
-                    element.info.html("nucleii: " + ln1);
+                    element.info.html("nuclei: " + ln1);
                 }
             };
         """, height=height, width=width)
