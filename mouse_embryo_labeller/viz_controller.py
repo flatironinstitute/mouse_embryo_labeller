@@ -678,6 +678,8 @@ class VizController:
     def set_ids(self, timestamp_id=None, nucleus_id=None):
         if nucleus_id is not None:
             self.set_nucleus_id(nucleus_id)
+        else:
+            self.nucleus_collection.set_widget_options(callback=None, selected=None)
         if timestamp_id is not None:
             self.selected_timestamp_index = self.timestamp_collection.index_of_id(timestamp_id)
             self.timestamp_input.value = self.selected_timestamp_index
@@ -971,6 +973,7 @@ class TimeTreeWidget:
             self.controller.set_ids(timestamp_id=self.timestamp_index)
         else:
             #self.controller.redraw()
+            self.nucleus_collection.set_widget_options(callback=None, selected=None)
             if old != new:
                 #print("old", old, "new", new)
                 self.make_widget()
