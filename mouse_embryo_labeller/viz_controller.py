@@ -858,7 +858,7 @@ class TimeTreeWidget:
             widget = self.widget
             position_slider = self.position_slider
             ts_slider = self.ts_slider
-            display_debug = True
+            display_debug = False
             if display_debug:  # DEBUGGING
                 widget = self.widget.debugging_display()
                 position_slider = self.position_slider.debugging_display()
