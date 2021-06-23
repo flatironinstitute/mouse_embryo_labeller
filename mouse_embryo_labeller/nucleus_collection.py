@@ -104,7 +104,10 @@ class NucleusCollection:
                     progress = True
             assert progress, "Circular node parent relationship: " + repr(list(unassigned))
 
-    def assign_positions(self):
+    def assign_positions(self, check_children=False):
+        if check_children:
+            self.assign_children()
+            self.assign_widths()
         # after assign_width
         cursor = 0
         for n in reversed(self.sorted_nuclei()):
