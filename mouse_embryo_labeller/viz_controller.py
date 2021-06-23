@@ -101,6 +101,11 @@ class VizController:
         self.nucleus_collection.assign_widths()
         self.timestamp_collection.assign_indices()
         self.nucleus_collection.assign_positions()
+        self.time_tree.check_nuclei_range()
+
+    def id_to_visible_nuclei(self):
+        # assume calculate_stats is up to date
+        return self.time_tree.get_id_to_visible_nuclei()
 
     switch_count = 0
 
@@ -130,6 +135,9 @@ class VizController:
     last_side = 350
 
     def make_widget(self, side=None):
+        # calculate stats to determine visible nuclei tracks
+        self.calculate_stats()
+        id_to_nucleus = self.id_to_visible_nuclei()
         if side is None:
             side = self.last_side
         self.last_side = side
@@ -258,14 +266,15 @@ class VizController:
             LHScontrols_assembly,
             RHScontrols_assembly,
         ])
-        rimage = self.raster_image(ts)
+        # rimage = self.raster_image(ts)
         if self.show_tree_view:
             self.raster_display = None
-            self.calculate_stats()
+            #self.calculate_stats()
             #self.time_tree = TimeTreeWidget(self.nucleus_collection, self.timestamp_collection, self)
             self.left_box = self.time_tree.make_widget(side, side)
         else:
             #self.time_tree = None
+            rimage = self.raster_image(ts)
             self.raster_display = array_image.show_array(
                 rimage, 
                 height=side, 
@@ -274,7 +283,7 @@ class VizController:
             )
             self.left_box = self.raster_display
         #self.left_box = self.left_box.debugging_display() # DEBUG
-        limage = self.label_image(ts)
+        limage = self.label_image(ts, id_to_nucleus)
         self.labelled_image_display = array_image.show_array(
             limage, 
             height=side, 
@@ -678,6 +687,7 @@ class VizController:
 
     def redraw(self):
         self.calculate_stats()
+        id_to_nucleus = self.id_to_visible_nuclei()
         #tsc = self.timestamp_collection
         self.show_nucleus_selection()
         (prv, nxt) = self.previous_next()
@@ -688,11 +698,11 @@ class VizController:
             rimage = self.raster_image(ts)
             self.raster_display.set_image(rimage)
         self.check_highlights()
-        limage = self.label_image(ts)
+        limage = self.label_image(ts, id_to_nucleus)
         self.labelled_image_display.set_image(limage)
 
-    def label_image(self, ts):
-        color_mapping = ts.colorization_mapping()
+    def label_image(self, ts, id_to_nucleus):
+        color_mapping = ts.colorization_mapping(id_to_nucleus)
         extruded = self.extruded_checkbox.value
         layer = self.layers_slider.value
         return ts.colorized_label_slice(
@@ -718,8 +728,9 @@ class TimeTreeWidget:
         self.frame = None
         self.min_ts_index = 0
         self.max_ts_index = timestamp_collection.max_index()
+        nucleus_collection.assign_positions(check_children=True)
         self.min_position = 0
-        self.max_position = len(nucleus_collection.nuclei) - 1
+        self.max_position = nucleus_collection.last_position # len(nucleus_collection.nuclei)# - 1
         self.position_to_nuclei = None
         self.nuclei_range_order = None
         self.assembly = None
@@ -743,9 +754,21 @@ class TimeTreeWidget:
 
     def compute_nuclei_range(self):
         self.controller.calculate_stats()   # clean data structures
+        # self.check_nuclei_range() -- called by calculate_stats
+
+    def check_nuclei_range(self):
+        # Avoid infinite loop: assume self.controller data structures are valid.
         self.nuclei_in_range = self.sort_nuclei_in_range()
         #self.id_to_nucleus_in_range = set(x.identifier for x in self.nuclei_in_range.values())
         self.id_to_nucleus_in_range = {x.identifier: x for x in self.nuclei_in_range.values()}
+
+    def get_id_to_visible_nuclei(self):
+        result = {}
+        for (id, n) in self.id_to_nucleus_in_range.items():
+            rp = n.range_position
+            if (rp is not None) and (self.min_position <= rp <= self.max_position):
+                result[id] = n
+        return result
 
     making_widget = False
 
@@ -835,7 +858,7 @@ class TimeTreeWidget:
             widget = self.widget
             position_slider = self.position_slider
             ts_slider = self.ts_slider
-            display_debug = False
+            display_debug = True
             if display_debug:  # DEBUGGING
                 widget = self.widget.debugging_display()
                 position_slider = self.position_slider.debugging_display()
@@ -898,24 +921,32 @@ class TimeTreeWidget:
             self.event_rect.on("click", self.click)
             #widget.fit()
 
+    last_slide = None  # for debug
+
     def position_slide(self, positions):
+        self.last_slide = positions
         if self.making_widget:
             return  # ignore callbacks before
-        old = (self.min_position, self.max_position)
+        #old = (self.min_position, self.max_position)
         self.min_position = positions["LOW"]
         self.max_position = positions["HIGH"]
-        new = (self.min_position, self.max_position)
+        #new = (self.min_position, self.max_position)
         curr = positions["CURRENT"]
+        nucleus_to_set = self.controller.get_nucleus()
         nucleus = self.nucleus_at_range_position(curr)
         if nucleus is not None:
-            old_nucleus = self.controller.get_nucleus()
-            if nucleus is not old_nucleus:
-                self.controller.set_ids(nucleus_id=nucleus.identifier)
-            elif old != new:
-                self.make_widget()
-        else:
-            if old != new:
-                self.make_widget()
+            nucleus_to_set = nucleus
+        # always set nucleus in order to update boundary limits
+        self.controller.set_ids(nucleus_id=nucleus_to_set.identifier)
+        #if nucleus is not None:
+        #    old_nucleus = self.controller.get_nucleus()
+        #    if nucleus is not old_nucleus:
+        #        self.controller.set_ids(nucleus_id=nucleus.identifier)
+        #    elif old != new:
+        #        self.make_widget()
+        #else:
+        #    if old != new:
+        #        self.make_widget()
 
     def reset_position_extrema(self):
         # reset the position range
