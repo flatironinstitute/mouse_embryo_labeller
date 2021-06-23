@@ -743,7 +743,8 @@ class TimeTreeWidget:
     def compute_nuclei_range(self):
         self.controller.calculate_stats()   # clean data structures
         self.nuclei_in_range = self.sort_nuclei_in_range()
-        self.nuclei_in_range_ids = set(x.identifier for x in self.nuclei_in_range.values())
+        #self.id_to_nucleus_in_range = set(x.identifier for x in self.nuclei_in_range.values())
+        self.id_to_nucleus_in_range = {x.identifier: x for x in self.nuclei_in_range.values()}
 
     making_widget = False
 
@@ -794,11 +795,11 @@ class TimeTreeWidget:
             )
             self.ts_slider.set_values(low=self.min_ts_index, high=self.max_ts_index)
             #self.nuclei_in_range = self.sort_nuclei_in_range(self.min_ts_index, self.max_ts_index)
-            #self.nuclei_in_range_ids = set(x.identifier for x in self.nuclei_in_range.values())
+            #self.id_to_nucleus_in_range = set(x.identifier for x in self.nuclei_in_range.values())
             nuclei_range_positions = list(self.nuclei_in_range.keys())
             initial_position = 0
             nucleus = self.controller.get_nucleus()
-            if (nucleus is not None) and (nucleus.identifier in self.nuclei_in_range_ids):
+            if (nucleus is not None) and (nucleus.identifier in self.id_to_nucleus_in_range):
                 initial_position = nucleus.range_position
             low_position = 0
             high_position = 1
