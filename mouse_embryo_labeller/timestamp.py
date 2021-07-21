@@ -83,7 +83,7 @@ class Timestamp:
             max_mask = np.maximum(r[i], max_mask)
             extruded[i] = mask
             max_intensity[i] = max_mask
-        assert extruded.shape == max_intensity.shape, "shapes should match: " + repr((extruded.shape, max_intensity.shape))
+        assert extruded.shape == max_intensity.shape[:3], "shapes should match: " + repr((extruded.shape, max_intensity.shape))
         self.r3d_max_intensity = max_intensity
         self.l3d_extruded = extruded
 
@@ -179,7 +179,7 @@ class Timestamp:
         assert a is not None, "Data is not loaded and processed: " + repr(self.identifier)
         l_slice = a[slice_i]
         bound = boundary(l_slice)
-        if colorize:
+        if colorize or (len(r_slice.shape) > len(bound.shape)):
             # make broadcast compatible
             bound = bound.reshape(bound.shape + (1,))
         r_slice = np.choose(bound, [r_slice, 255])
@@ -263,7 +263,9 @@ class Timestamp:
         n = self.label_to_nucleus
         if l is not None:
             if r is not None:
-                assert l.shape == r.shape, "labels array and raster array must have same shape."
+                assert l.shape == r.shape[:3], (
+                    "labels array and raster array must have same shape. " + repr([l.shape, r.shape])
+                )
             if u is None:
                 self.unique_labels = set(np.unique(l))
             if n is None:

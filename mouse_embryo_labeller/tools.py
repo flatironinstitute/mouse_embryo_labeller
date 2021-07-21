@@ -187,6 +187,70 @@ def preprocess_tracked_data(
     print("Stored timestamp collection", tsc.manifest_path)
     return helper
 
+CHANNELS_FOLDER = "../channels_example"
+CHANNEL0_PATTERN = "/Users/awatters/misc/LisaBrown/pole_cell/560/Crop_out_stack0_chan0_camFused_tp%(ts_number)05d.h5.tiff"
+CHANNEL1_PATTERN = "/Users/awatters/misc/LisaBrown/pole_cell/560/Crop_out_stack0_chan1_camFused_tp%(ts_number)05d.h5.tiff"
+CHANNEL_LABEL_PATTERN = "/Users/awatters/misc/LisaBrown/pole_cell/560/LabelDownSample_out_stack0_chan1_camFuse_%(ts_number)05d.tif"
+
+def preprocess_channel_data(
+    stride=4,
+    destination=CHANNELS_FOLDER,
+    labels_pattern=CHANNEL_LABEL_PATTERN,
+    channel0_pattern=CHANNEL0_PATTERN,
+    channel1_pattern=CHANNEL1_PATTERN,
+    sanity_limit=100000,
+    ):
+    helper = FileSystemHelper(destination)
+    if not os.path.isdir(destination):
+        os.mkdir(destination)
+    nc = helper.stored_nucleus_collection()
+    print("Stored empty nucleus collection", nc.manifest_path)
+    tracks_done = False
+    for ts_number in range(sanity_limit):
+        D = {"ts_number": ts_number}
+        labels_path = labels_pattern % D
+        if not os.path.exists(labels_path):
+            print ("::: Done creating timestamps: no labels file", labels_path)
+            tracks_done = True
+            assert ts_number > 0, "NOTHING FOUND!!"
+            break
+        # otherwise proceed...
+        print("::: found timestamp labels file", labels_path)
+        c_path = channel0_pattern % D
+        assert os.path.isfile(c_path), repr(labels_path) + " no matching intensities " + repr(c_path)
+        #img = helper.get_pyklb_image(intensities_path)
+        channel0 = load_tiff_array(c_path)
+        c_path = channel1_pattern % D
+        assert os.path.isfile(c_path), repr(labels_path) + " no matching intensities " + repr(c_path)
+        #img = helper.get_pyklb_image(intensities_path)
+        channel1 = load_tiff_array(c_path)
+        labels = load_tiff_array(labels_path)
+        assert channel0.shape == channel1.shape, "channel shapes don't match " + repr([channel0.shape, channel1.shape])
+        # XXXX the label shape and channel shapes don't match in the sample data 
+        # XXXX HACKY CORRECTION HERE:
+        if channel0.shape != labels.shape:
+            channel0 = channel0[:, ::2, ::2]
+            channel1 = channel1[:, ::2, ::2]
+        assert channel0.shape == labels.shape, "channel shape doesn't match label shape " + repr((channel0.shape, labels.shape))
+        # truncate j and k
+        #s_img = img[:, ::stride, ::stride]
+        s_labels = labels[:, ::stride, ::stride]
+        s_img = np.zeros(s_labels.shape + (3,), dtype=np.float)  # three channels required but only using 2
+        s_img[:, :, :, 0] = scale_channel(channel0[:, ::stride, ::stride])
+        s_img[:, :, :, 1] = scale_channel(channel1[:, ::stride, ::stride])
+        ts = helper.add_timestamp(ts_number, s_img, s_labels)
+        print("::: timestamp", ts.manifest)
+    assert tracks_done, "Track loop didn't terminate normally.  Too many tracks?"
+    tsc = helper.stored_timestamp_collection()
+    print("Stored timestamp collection", tsc.manifest_path)
+    return helper
+
+def scale_channel(channel_array, maximum=256.0):
+    result = np.zeros(channel_array.shape, dtype=np.float)
+    factor = maximum * 1.0 / channel_array.max()
+    result[:] = factor * channel_array
+    return result
+
 def get_example_nucleus_collection(from_folder=EXAMPLE_FOLDER):
     return nucleus_collection.collection_from_json(from_folder)
 
@@ -199,7 +263,8 @@ def load_tiff_array(tiff_path):
     for i, page in enumerate(ImageSequence.Iterator(im)):
         a = np.array(page)
         # only the first channel
-        a = a[:, :, 0]
+        if len(a.shape) == 3:
+            a = a[:, :, 0]
         # flip j and k
         a = a.transpose()
         L.append(a)
