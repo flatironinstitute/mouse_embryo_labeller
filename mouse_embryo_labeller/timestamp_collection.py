@@ -15,6 +15,9 @@ class TimestampCollection:
         # slot for geometry calculated externally
         self.geometry = None
 
+    def timestamp_sequence(self):
+        return [self.id_to_timestamp[id] for id in self.id_sequence]
+
     def reset_stats(self):
         pass  # placeholder -- nothing to be done here yet.
 
