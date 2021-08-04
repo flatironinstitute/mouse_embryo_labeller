@@ -40,6 +40,11 @@ def positive_extent_info(array):
     slicing = positive_slicing(array)
     return slicing_info(slicing)
 
+def apply_slicing(slicing, to_array):
+    [[i0, i1], [j0, j1], [k0, k1]] = slicing
+    sliced = to_array[i0: i1, j0: j1, k0: k1]
+    return sliced
+
 # field names
 SLICING = "slicing"
 DIMENSIONS = 'dimensions'
