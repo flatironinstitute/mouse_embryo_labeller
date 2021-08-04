@@ -21,6 +21,16 @@ class Timestamp:
         for nucleus in self.label_to_nucleus.values():
             nucleus.add_timestamp_index(index)
 
+    def nucleus_names(self):
+        return set(n.identifier for n in self.label_to_nucleus.values())
+
+    def label_colors(self, nucleus_names=None):
+        label_to_color = {}
+        for (label, nucleus) in self.label_to_nucleus.items():
+            if (nucleus_names is None) or (nucleus.identifier in nucleus_names):
+                label_to_color[label] = list(nucleus.color)
+        return label_to_color
+
     def reset_all_arrays(self):
         self.raster3d = None
         self.labels3d = None
