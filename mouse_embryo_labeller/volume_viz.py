@@ -37,8 +37,9 @@ class EmbryoVolume:
         self.timestamps = timestamps
         self.id_to_timestamps = {ts.identifier: ts for ts in timestamps}
         self.volume_widget = None
+        self.ts_id = None
 
-    def make_widget(self):
+    def make_widget(self, debug=False):
         volume.widen_notebook()
         tsid_options = [None] + [ts.identifier for ts in self.timestamps]
         self.ts_dropdown = widgets.Dropdown(
@@ -50,9 +51,12 @@ class EmbryoVolume:
         self.ts_dropdown.observe(self.ts_dropdown_change, names='value')
         self.volume_widget = volume.Volume32()
         self.status_widget = widgets.HTML(value="Please select a timestamp.")
+        display = self.volume_widget
+        if debug:
+            display = self.volume_widget.debugging_display()
         self.widget = widgets.VBox([
             self.ts_dropdown,
-            self.volume_widget,
+            display,
             self.status_widget,
         ])
         return self.widget
@@ -63,8 +67,9 @@ class EmbryoVolume:
     def ts_dropdown_change(self, change):
         value = self.ts_dropdown.value
         if value is not None:
-            self.status("selected: " + repr(value))
-            self.load_timestamp(value)
+            if value != self.ts_id:
+                self.status("selected: " + repr(value))
+                self.load_timestamp(value)
         else:
             self.status("Cannot change to timestamp of None.")
 
@@ -90,5 +95,21 @@ class EmbryoVolume:
         )
         W.load_label_to_color_mapping(label_to_color)
         W.build(width=self.width)
+        self.ts_id = ts_id
+        if ts_id != self.ts_dropdown.value:
+            self.ts_dropdown.value = ts_id
         self.status("loaded timestamp: " + repr(ts_id))
+
+    def capture_images(self, sleep=1):
+        import time
+        images = []
+        for ts in self.timestamps:
+            tsid = ts.identifier
+            self.load_timestamp(tsid)
+            time.sleep(sleep)
+            self.volume_widget.sync()
+            img = self.volume_widget.get_pixels()
+            images.append(img)
+            print("loaded", ts)
+        return images
 
