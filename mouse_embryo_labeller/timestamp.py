@@ -17,6 +17,24 @@ class Timestamp:
         self.array_path = None
         self.reset_all_arrays()
 
+    def nuclei_mask_slicing(self, nuclei_names=None):
+        from mouse_embryo_labeller import geometry
+        self.load_truncated_arrays()
+        l3d = self.l3d_truncated
+        # release memory
+        self.reset_all_arrays()
+        mask = np.zeros(l3d.shape, dtype=np.int)
+        l2n = self.label_to_nucleus
+        if nuclei_names is None:
+            labels = l2n.keys()
+        else:
+            labels = [label for (label, n) in l2n.items() if n.identifier in nuclei_names]
+        for label in labels:
+            mask += (l3d == label)
+        result = geometry.positive_slicing(mask)
+        #(self.identifier, "masking", list(labels), "labels", result)
+        return result
+
     def assign_index(self, index):
         for nucleus in self.label_to_nucleus.values():
             nucleus.add_timestamp_index(index)
