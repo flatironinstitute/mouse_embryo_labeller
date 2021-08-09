@@ -48,6 +48,19 @@ Then you should be able to launch Jupyter and navigate to the test notebook
 at `mouse_embryo_labeller/notebooks/tests/load test.ipynb`.  Run the cells of the notebook
 and interact with the visualization to verify everything is working.
 
+## Installation for volume components (new as of Aug 9 2021)
+
+To use the 3d volume viewer components and to generate 3d volume animations
+please install the latest experimental version of the feedWebGL2 package in the same manner
+as jp_doodle within the same folder:
+
+```bash
+% git clone https://github.com/AaronWatters/feedWebGL2.git
+% cd jp_doodle
+% pip install -e .
+% cd ..
+```
+
 # Data preprocessing
 
 The interactive widget reads `numpy` compressed array files and reads/writes JSON data files.
