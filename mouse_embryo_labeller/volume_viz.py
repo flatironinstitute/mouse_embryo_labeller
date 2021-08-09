@@ -6,6 +6,8 @@ from feedWebGL2 import volume
 from mouse_embryo_labeller import tools
 from mouse_embryo_labeller import geometry
 import ipywidgets as widgets
+import time
+import numpy as np
 
 class EmbryoVolume:
 
@@ -32,14 +34,18 @@ class EmbryoVolume:
         timestamps = []
         for timestamp in self.tsc.timestamp_sequence():
             tnames = timestamp.nucleus_names()
-            if (nuclei_names is None) or (self.nuclei_names & tnames):
+            if (tnames) and ((nuclei_names is None) or (self.nuclei_names & tnames)):
                 timestamps.append(timestamp)
         self.timestamps = timestamps
         self.id_to_timestamps = {ts.identifier: ts for ts in timestamps}
         self.volume_widget = None
         self.ts_id = None
+        self.slice_union = self.combined_slicing()
+        self.combo_widget = None
 
-    def make_widget(self, debug=False):
+    def make_widget(self, debug=False, width=None):
+        if width is not None:
+            self.width = width
         volume.widen_notebook()
         tsid_options = [None] + [ts.identifier for ts in self.timestamps]
         self.ts_dropdown = widgets.Dropdown(
@@ -60,6 +66,28 @@ class EmbryoVolume:
             self.status_widget,
         ])
         return self.widget
+
+    def make_combo_widget(self, debug=False, side=1000):
+        from mouse_embryo_labeller import viz_controller
+        my_widget = self.make_widget(debug=debug, width=side * 4)
+        self.labeller = viz_controller.VizController(self.folder, self.tsc, self.nc)
+        labeller_widget = self.labeller.make_widget(side)
+        self.combo_widget = widgets.VBox([
+            labeller_widget,
+            my_widget,
+        ])
+        return self.combo_widget
+
+    def capture_combo_image(self, tsid, sleep=0.1):
+        assert self.combo_widget is not None
+        labeller = self.labeller
+        labeller.tree_view_checkbox.value = True
+        labeller.timestamp_input.value = tsid
+        tree = labeller.time_tree.widget
+        image3d = self.capture_image(tsid, sleep)
+        treeimg = tree.pixels_array()
+        result = combine_images(treeimg, image3d)
+        return result
 
     def status(self, message):
         self.status_widget.value = str(message)
@@ -83,7 +111,8 @@ class EmbryoVolume:
         l3d = ts.l3d_truncated
         # release memory
         ts.reset_all_arrays()
-        sl = geometry.positive_slicing(l3d)
+        #sl = geometry.positive_slicing(l3d)
+        sl = self.slice_union
         sliced = geometry.apply_slicing(sl, l3d)
         W = self.volume_widget
         W.load_3d_numpy_array(
@@ -100,16 +129,71 @@ class EmbryoVolume:
             self.ts_dropdown.value = ts_id
         self.status("loaded timestamp: " + repr(ts_id))
 
-    def capture_images(self, sleep=1):
-        import time
+    def combined_slicing(self):
+        "Union of non-empty slices for all relevant timestamps"
+        print("computing slicing.")
+        slice_union = None
+        for ts in self.timestamps:
+            #ts.load_truncated_arrays()
+            #l3d = ts.l3d_truncated
+            # release memory
+            #ts.reset_all_arrays()
+            #sl = geometry.positive_slicing(l3d)
+            sl = ts.nuclei_mask_slicing(self.nuclei_names)
+            if slice_union is None:
+                slice_union = sl
+            else:
+                slice_union = geometry.unify_slicing(slice_union, sl)
+        print("done computing slicing", slice_union)
+        return slice_union
+
+    def capture_image(self, tsid, sleep=0.1):
+        self.load_timestamp(tsid)
+        time.sleep(sleep)
+        self.volume_widget.sync()
+        img = self.volume_widget.get_pixels()
+        return img
+
+    def capture_images(self, sleep=0.1):
         images = []
         for ts in self.timestamps:
             tsid = ts.identifier
-            self.load_timestamp(tsid)
-            time.sleep(sleep)
-            self.volume_widget.sync()
-            img = self.volume_widget.get_pixels()
+            img = self.capture_image(tsid, sleep)
             images.append(img)
             print("loaded", ts)
         return images
+
+    def capture_combo_images(self, sleep=0.1):
+        images = []
+        for ts in self.timestamps:
+            tsid = ts.identifier
+            img = self.capture_combo_image(tsid, sleep)
+            images.append(img)
+            print("loaded", ts)
+        return images
+        
+
+def save_images_to_gif(images, filename="animation.gif", duration=1, bookends=True):
+    import imageio
+    if bookends:
+        im0 = images[0]
+        black = np.zeros(im0.shape, dtype=np.uint8)
+        images = [black] + list(images) + [black]
+    imageio.mimsave(filename, images, format="GIF", duration=duration)
+
+def combine_images(left_image, right_image):
+    (LH, LW) = left_image.shape[:2]
+    (RH, RW) = right_image.shape[:2]
+    width = LW + RW
+    height = max(LH, RH)
+    result = np.zeros((height, width, 4), dtype=np.uint8)
+    result[:] = 255
+    left3 = left_image[:, :, :3]
+    sh = int((height-LH)/2)
+    result[sh:sh+LH, :LW, :3] = np.where(left3, left3, 255)
+    right3 = right_image[:, :, :3]
+    sh = int((height-RH)/2)
+    result[sh:sh+RH, LW: width, :3] = np.where(right3, right3, 255)
+    result[:, :, 3] = 255
+    return result
 
