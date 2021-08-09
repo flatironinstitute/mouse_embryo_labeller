@@ -1,9 +1,12 @@
 # mouse_embryo_labeller
 
 
-A tool for tracking mouse embryo cell nuclei over time using data derived from 4d microscopy
+This package includes tools for tracking mouse embryo cell nuclei over time using data derived from 4d microscopy.
 
-<img src="nuclei.png" width="500"/>
+
+<img src="nuclei.png" width="800"/>
+
+<img src="all.gif" width="800">
 
 ## Installation
 
