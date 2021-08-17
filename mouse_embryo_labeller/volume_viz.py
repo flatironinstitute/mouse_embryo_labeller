@@ -19,6 +19,7 @@ class EmbryoVolume:
         di=dict(x=0, y=0, z=2),  # xyz offset between ary[0,0,0] and ary[1,0,0]
         dj=dict(x=0, y=1, z=0),  # xyz offset between ary[0,0,0] and ary[0,1,0]
         dk=dict(x=1, y=0, z=0),  # xyz offset between ary[0,0,0] and ary[0,0,1]
+        camera_distance_multiple=1.0,
         ):
         self.folder = folder
         self.width = width
@@ -28,6 +29,7 @@ class EmbryoVolume:
         self.di = di
         self.dj = dj
         self.dk = dk
+        self.camera_distance_multiple = camera_distance_multiple
         self.nc = tools.get_example_nucleus_collection(folder)
         self.tsc = tools.get_example_timestamp_collection(folder, self.nc)
         # get the timestamps that include the nuclei
@@ -121,6 +123,7 @@ class EmbryoVolume:
             di=self.di,
             dj=self.dj,
             dk=self.dk,
+            camera_distance_multiple=self.camera_distance_multiple,
         )
         W.load_label_to_color_mapping(label_to_color)
         W.build(width=self.width)
