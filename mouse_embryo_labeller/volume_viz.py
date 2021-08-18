@@ -71,17 +71,29 @@ class EmbryoVolume:
 
     def make_combo_widget(self, debug=False, side=1000):
         from mouse_embryo_labeller import viz_controller
+        self.side = side
+        self.debug = debug
         my_widget = self.make_widget(debug=debug, width=side * 4)
         self.labeller = viz_controller.VizController(self.folder, self.tsc, self.nc)
-        labeller_widget = self.labeller.make_widget(side)
+        self.labeller_widget = self.labeller.make_widget(side)
         self.combo_widget = widgets.VBox([
-            labeller_widget,
+            self.labeller_widget,
             my_widget,
         ])
         return self.combo_widget
 
+    def reset_combo_widget(self):
+        # free up memory...
+        self.volume_widget.dispose(verbose=True)
+        #my_widget = self.make_widget(debug=self.debug, width=self.side * 4)
+        #self.combo_widget.children = [
+        #    self.labeller_widget,
+        #    my_widget,
+        #]
+
     def capture_combo_image(self, tsid, sleep=0.1):
         assert self.combo_widget is not None
+        self.reset_combo_widget()
         labeller = self.labeller
         labeller.tree_view_checkbox.value = True
         labeller.timestamp_input.value = tsid
