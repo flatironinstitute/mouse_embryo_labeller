@@ -84,7 +84,7 @@ class EmbryoVolume:
 
     def reset_combo_widget(self):
         # free up memory...
-        self.volume_widget.dispose(verbose=True)
+        self.volume_widget.dispose(verbose=False)
         #my_widget = self.make_widget(debug=self.debug, width=self.side * 4)
         #self.combo_widget.children = [
         #    self.labeller_widget,
