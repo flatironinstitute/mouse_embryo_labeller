@@ -178,9 +178,11 @@ class EmbryoVolume:
             print("loaded", ts)
         return images
 
-    def capture_combo_images(self, sleep=0.1):
+    def capture_combo_images(self, stride=1, sleep=0.1):
         images = []
-        for ts in self.timestamps:
+        timestamps = self.timestamps
+        for index in range(0, len(timestamps), stride):
+            ts = timestamps[index]
             tsid = ts.identifier
             img = self.capture_combo_image(tsid, sleep)
             images.append(img)
