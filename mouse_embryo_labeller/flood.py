@@ -1,4 +1,6 @@
-
+"""
+Identify isolated regions in a 3D mask using "flooding".
+"""
 
 import numpy as np
 from mouse_embryo_labeller import color_list
@@ -10,6 +12,7 @@ class Flood3DMask:
     def __init__(self, mask, niter=1000, mark=True, verbose=True):
         self.volume_widget = None
         labels = np.arange(1, mask.size+1).reshape(mask.shape)
+        mask = mask.astype(np.int)
         smask = mask * int(1.1 * mask.size)
         combined = np.maximum(labels, smask)
         current = combined.copy()
@@ -53,6 +56,9 @@ class Flood3DMask:
             self.mark()
 
     def mark(self):
+        """
+        Assign small integer labels and colors to connected regions in flooded array.
+        """
         self.nmarks = len(self.labels) - 1
         marked_labels = self.labels[:-1]  # last label is mask marker -- exclude it
         #mark_colors = [[255,255,255]] + color_list.color_arrays[:self.nmarks]
@@ -71,6 +77,7 @@ class Flood3DMask:
         self.mark_colors = mark_colors
 
     def volume(self):
+        "Prepare volume visualization for marked array."
         volume.widen_notebook()
         W = self.volume_widget = volume.Volume32()
         return W
@@ -83,6 +90,7 @@ class Flood3DMask:
         dk=dict(x=1, y=0, z=0),  # xyz offset between ary[0,0,0] and ary[0,0,1]
         camera_distance_multiple=1.7,
         ):
+        "Display and initialize volume visualization of marked array."
         W = self.volume_widget
         if W is None:
             W = self.volume()
