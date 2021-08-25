@@ -69,13 +69,15 @@ class EmbryoVolume:
         ])
         return self.widget
 
-    def make_combo_widget(self, debug=False, side=1000):
+    def make_combo_widget(self, debug=False, side=1000, solid=False):
         from mouse_embryo_labeller import viz_controller
         self.side = side
+        self.solid = solid
         self.debug = debug
         my_widget = self.make_widget(debug=debug, width=side * 4)
         self.labeller = viz_controller.VizController(self.folder, self.tsc, self.nc)
-        self.labeller_widget = self.labeller.make_widget(side)
+        labeller_side = side * 2
+        self.labeller_widget = self.labeller.make_widget(labeller_side)
         self.combo_widget = widgets.VBox([
             self.labeller_widget,
             my_widget,
@@ -128,6 +130,7 @@ class EmbryoVolume:
         #sl = geometry.positive_slicing(l3d)
         sl = self.slice_union
         sliced = geometry.apply_slicing(sl, l3d)
+        self.sliced_array = sliced # for debugging
         W = self.volume_widget
         W.load_3d_numpy_array(
             sliced, 
@@ -136,6 +139,7 @@ class EmbryoVolume:
             dj=self.dj,
             dk=self.dk,
             camera_distance_multiple=self.camera_distance_multiple,
+            solid_labels=self.solid,
         )
         W.load_label_to_color_mapping(label_to_color)
         W.build(width=self.width)
