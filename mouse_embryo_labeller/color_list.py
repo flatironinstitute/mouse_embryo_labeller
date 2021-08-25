@@ -10,6 +10,13 @@ def indexed_color(i):
     i = i % len(color_arrays)
     return color_arrays[i]
 
+def get_colors(length):
+    "Get length colors -- use duplicates if needed."
+    result = list(range(length))
+    for index in range(length):
+        result[index] = indexed_color(index)
+    return result
+
 color_arrays = [
     [0, 0, 255],
     [255, 0, 0],
