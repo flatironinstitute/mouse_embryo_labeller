@@ -3,6 +3,10 @@ import numpy as np
 import json
 from scipy.ndimage import gaussian_filter
 
+white = np.array([255,255,255])
+red = np.array([255,0,0])
+black = np.array([0,0,0])
+
 class Timestamp:
 
     """
@@ -332,10 +336,62 @@ def make_color_map():
 COLORMAP = make_color_map()
 
 def boundary(array):
+    """
+    Generate an outline array demarcating uniform labelled regions from the input array.
+    """
     result = np.zeros(array.shape, dtype=np.bool)
     result[:-1, 1:] = (array[1:, 1:] != array[:-1, 1:])
     result[1:, :-1] |= (array[1:, 1:] != array[1:, :-1])
     return result
+
+def select_labels(labels_array, selected_labels):
+    """
+    Restrict the labels array to the selected labels.
+    Return array of zeros except where labels_array has one of the selected labels.
+    """
+    selected_labels = set(selected_labels)
+    flat_array = labels_array.ravel()
+    flat_result = np.zeros(flat_array.shape, dtype=flat_array.dtype)
+    labels = np.unique(flat_array)
+    limit = labels.max() + 1
+    chooser = list(range(limit))
+    for i in range(limit):
+        if i not in selected_labels:
+            chooser[i] = 0
+    #chooser[0] = flat_result
+    flat_result = np.choose(flat_array, chooser)
+    result = flat_result.reshape(labels_array.shape)
+    return result
+
+
+def special_boundary(labels_array, special_labels, normal_color=white, special_color=red, background_color=black):
+    """
+    Return labelled areas in labels_array outlined with boundaries.
+    Use the special_color if the boundary marks a region from special_labels,
+    otherwise use the normal_color.
+    Fill non-outline pixels using the background_color (which can be an array of a single color).
+    """
+    normal_color = np.array(normal_color).reshape((1,3))
+    special_color = np.array(special_color).reshape((1,3))
+    background_color = np.array(background_color)
+    background_dim = len(background_color.shape)
+    if background_dim == 1:
+        # solid background color
+        background_color = background_color.reshape((1,3))
+    elif background_dim == 2:
+        # monotone raster
+        background_color = background_color.reshape((labels_array.size, 1))
+    else:
+        # full color background
+        assert background_dim == 3, "only backgrounds up to 3 dimensions supported."
+        background_color = background_color.reshape((labels_array.size, 3))
+    special_array = select_labels(labels_array, special_labels)
+    special_boundary = timestamp.boundary(special_array).astype(np.int)
+    normal_boundary = timestamp.boundary(labels_array).astype(np.int)
+    boundary_selector = np.maximum(special_boundary * 2, normal_boundary).ravel().reshape((labels_array.size, 1))
+    colorized_ravel = np.choose(boundary_selector, [background_color, normal_color, special_color])
+    colorized_boundaries = colorized_ravel.reshape(labels_array.shape + (3,))
+    return colorized_boundaries
 
 def test():
     x = np.arange(15).reshape((5,3))
