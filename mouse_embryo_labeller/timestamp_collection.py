@@ -3,6 +3,7 @@ import numpy as np
 import json
 import os
 from mouse_embryo_labeller import timestamp
+import json
 
 class TimestampCollection:
 
@@ -58,6 +59,30 @@ class TimestampCollection:
         identifier = ts.identifier
         self.id_to_timestamp[identifier] = ts
         self.id_sequence.append(identifier)
+
+    def load_mitosis_json(self, file_path, average_confidence=0.5):
+        f = open(file_path)
+        timestamp_descriptions = json.load(f)
+        f.close()
+        for tp_label in sorted(timestamp_descriptions.keys()):
+            (ts_num, nucleus_descriptions) = labelled_int_item(tp_label, "tp", timestamp_descriptions)
+            ts = self.get_timestamp(ts_num)
+            mitotic_labels = []
+            for nucleus_label in nucleus_descriptions:
+                (nucleus_num, slice_descriptions) = labelled_int_item(nucleus_label, "nuc",  nucleus_descriptions)
+                if slice_descriptions:
+                    nslices = len(slice_descriptions)
+                    total_confidence = 0.0
+                    for sc in slice_descriptions.values():
+                        c = float(sc)
+                        total_confidence += c
+                    mean = total_confidence / nslices
+                    if mean >= average_confidence:
+                        mitotic_labels.append(nucleus_num)
+            ts.special_labels = mitotic_labels
+            if mitotic_labels:
+                print ("ts", ts_num, "mitotic labels", mitotic_labels)
+        print ("Updated", len(timestamp_descriptions), "timestamps.")
 
     def split_right(self, from_timestamp_id, old_nucleus, new_nucleus):
         found = False
@@ -159,3 +184,10 @@ def load_preprocessed_timestamps(from_folder, nucleus_collection, filename="ts_m
 
 def filename_only(path):
     return os.path.split(path)[-1]
+
+def labelled_int_item(prefixed_label, prefix, dictionary):
+    ln = len(prefix)
+    assert prefixed_label[:ln] == prefix, "expected prefix: " + repr((prefix, prefixed_label))
+    integer_label = int (prefixed_label[ln:])
+    value = dictionary[prefixed_label]
+    return (integer_label, value)
