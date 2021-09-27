@@ -19,6 +19,7 @@ class Timestamp:
         self.label_to_nucleus = None
         self.manifest = None
         self.array_path = None
+        self.special_labels = []
         self.reset_all_arrays()
 
     def nuclei_mask_slicing(self, nuclei_names=None):
@@ -210,11 +211,13 @@ class Timestamp:
             a = self.l3d_extruded
         assert a is not None, "Data is not loaded and processed: " + repr(self.identifier)
         l_slice = a[slice_i]
-        bound = boundary(l_slice)
-        if colorize or (len(r_slice.shape) > len(bound.shape)):
-            # make broadcast compatible
-            bound = bound.reshape(bound.shape + (1,))
-        r_slice = np.choose(bound, [r_slice, 255])
+        #bound = boundary(l_slice)
+        #if colorize or (len(r_slice.shape) > len(bound.shape)):
+        #    # make broadcast compatible
+        #    bound = bound.reshape(bound.shape + (1,))
+        #r_slice = np.choose(bound, [r_slice, 255])
+        special_labels = self.special_labels
+        r_slice = special_boundary(l_slice, special_labels, background_color=r_slice)
         return r_slice
 
     def get_label(self, layer, i, j, extruded=False):
@@ -240,14 +243,15 @@ class Timestamp:
         s = slice.shape
         colors = color_mapping_array[slice.flatten()]
         if outline:
-            bound = boundary(slice)
-            white = np.array([255,255,255], dtype=np.int).reshape((1, 3))
-            fbound = bound.flatten()
-            cbound = np.zeros(colors.shape, dtype=np.int)
-            cbound[:] = fbound.reshape(fbound.shape + (1,))
-            #print ("cbound", cbound.shape, "white", white.shape, "colors", colors.shape)
-            colors = np.choose(cbound, [colors, white])
-            #colors = np.choose(fbound, [colors, colors])   # debug test
+            #bound = boundary(slice)
+            #white = np.array([255,255,255], dtype=np.int).reshape((1, 3))
+            #fbound = bound.flatten()
+            #cbound = np.zeros(colors.shape, dtype=np.int)
+            #cbound[:] = fbound.reshape(fbound.shape + (1,))
+            #colors = np.choose(cbound, [colors, white])
+            special_labels = self.special_labels
+            colors = colors.reshape(slice.shape + (3,))
+            colors = special_boundary(slice, special_labels, background_color=colors)
         sout = s + (3,)
         return colors.reshape(sout)
 
@@ -386,8 +390,8 @@ def special_boundary(labels_array, special_labels, normal_color=white, special_c
         assert background_dim == 3, "only backgrounds up to 3 dimensions supported."
         background_color = background_color.reshape((labels_array.size, 3))
     special_array = select_labels(labels_array, special_labels)
-    special_boundary = timestamp.boundary(special_array).astype(np.int)
-    normal_boundary = timestamp.boundary(labels_array).astype(np.int)
+    special_boundary = boundary(special_array).astype(np.int)
+    normal_boundary = boundary(labels_array).astype(np.int)
     boundary_selector = np.maximum(special_boundary * 2, normal_boundary).ravel().reshape((labels_array.size, 1))
     colorized_ravel = np.choose(boundary_selector, [background_color, normal_color, special_color])
     colorized_boundaries = colorized_ravel.reshape(labels_array.shape + (3,))
