@@ -363,7 +363,8 @@ def select_labels(labels_array, selected_labels):
         if i not in selected_labels:
             chooser[i] = 0
     #chooser[0] = flat_result
-    flat_result = np.choose(flat_array, chooser)
+    #flat_result = np.choose(flat_array, chooser)
+    flat_result = big_choose(flat_array, chooser)
     result = flat_result.reshape(labels_array.shape)
     return result
 
@@ -396,6 +397,30 @@ def special_boundary(labels_array, special_labels, normal_color=white, special_c
     colorized_ravel = np.choose(boundary_selector, [background_color, normal_color, special_color])
     colorized_boundaries = colorized_ravel.reshape(labels_array.shape + (3,))
     return colorized_boundaries
+
+
+def big_choose(indices, choices):
+    "Alternate to np.choose that supports more than 30 choices."
+    indices = np.array(indices)
+    if (indices.max() <= 30) or (len(choices) <= 31):
+        # optimized fallback
+        choices = choices[:31]
+        return np.choose(indices, choices)
+    result = 0
+    while (len(choices) > 0) and not np.all(indices == -1):
+        these_choices = choices[:30]
+        remaining_choices = choices[30:]
+        shifted_indices = indices + 1
+        too_large_indices = (shifted_indices > 30).astype(np.int)
+        clamped_indices = np.choose(too_large_indices, [shifted_indices, 0])
+        choices_with_default = [result] + list(these_choices)
+        result = np.choose(clamped_indices, choices_with_default)
+        choices = remaining_choices
+        if len(choices) > 0:
+            indices = indices - 30
+            too_small = (indices < -1).astype(np.int)
+            indices = np.choose(too_small, [indices, -1])
+    return result
 
 def test():
     x = np.arange(15).reshape((5,3))
