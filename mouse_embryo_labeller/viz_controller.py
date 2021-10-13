@@ -643,14 +643,23 @@ class VizController:
             self.new_button.disabled = False
             self.child_button.disabled = (self.selected_nucleus_id is None)
 
+    redrawing = False
+
     def redraw_on_change(self, change):
-        self.show_tree_view = self.tree_view_checkbox.value
-        self.colorize_raster = self.colorize_checkbox.value
-        self.show_max_intensities = self.max_intensity_checkbox.value
-        self.selected_layer = self.layers_slider.value
-        self.selected_timestamp_index = self.timestamp_input.value
-        if change['new'] != change['old']:
-            self.redraw() 
+        # don't redraw in redraw! (traits suck!)
+        if self.redrawing:
+            return
+        self.redrawing = True
+        try:
+            self.show_tree_view = self.tree_view_checkbox.value
+            self.colorize_raster = self.colorize_checkbox.value
+            self.show_max_intensities = self.max_intensity_checkbox.value
+            self.selected_layer = self.layers_slider.value
+            self.selected_timestamp_index = self.timestamp_input.value
+            if change['new'] != change['old']:
+                self.redraw() 
+        finally:
+            self.redrawing = False
 
     def go_next(self, button):
         (prv, nxt) = self.previous_next()
@@ -705,6 +714,12 @@ class VizController:
         #self.prev_button.disabled = (prv is None)
         #self.next_button.disabled = (nxt is None)
         ts = self.timestamp()
+        nlayers1 = ts.nlayers() - 1
+        # adjusts layers slider in case dimensions change (?)
+        if self.layers_slider.max != nlayers1:
+            self.layers_slider.max = nlayers1
+            if self.layers_slider.value > nlayers1:
+                self.layers_slider.value = nlayers1
         if self.raster_display is not None:
             rimage = self.raster_image(ts)
             self.raster_display.set_image(rimage)

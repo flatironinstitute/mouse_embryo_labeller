@@ -374,7 +374,7 @@ def special_boundary(labels_array, special_labels, normal_color=white, special_c
     Return labelled areas in labels_array outlined with boundaries.
     Use the special_color if the boundary marks a region from special_labels,
     otherwise use the normal_color.
-    Fill non-outline pixels using the background_color (which can be an array of a single color).
+    Fill non-outline pixels using the background_color (which can be an array or a single color).
     """
     normal_color = np.array(normal_color).reshape((1,3))
     special_color = np.array(special_color).reshape((1,3))
