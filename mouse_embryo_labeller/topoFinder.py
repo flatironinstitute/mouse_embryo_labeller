@@ -272,6 +272,17 @@ class TopologyFinder:
         gridded = scaled.astype(np.int)
         return tuple(gridded)
 
+    def vertices_weights_and_edge_indices(self):
+        vertex_list = list(self.vertex_to_edges.keys())
+        vertex_weights = [self.vertex_size.get(v, 1) for v in vertex_list]
+        vertex_to_index = {vertex: index for (index, vertex) in enumerate(vertex_list)}
+        edge_vertices = [list(e) for e in self.edge_to_triangles.keys()]
+        edge_indices = [ [vertex_to_index[v1], vertex_to_index[v2]] for [v1, v2] in edge_vertices]
+        edge_indices = np.array(edge_indices, dtype=np.int)
+        rescaled_vertices = np.array(vertex_list, dtype=np.float) / self.scale_factor
+        rescaled_weights = np.array(vertex_weights, dtype=np.float) / self.scale_factor
+        return (rescaled_vertices, rescaled_weights, edge_indices)
+
     def tedge_distance(self, tedge):
         return self.tdistance(*list(tedge))
 
