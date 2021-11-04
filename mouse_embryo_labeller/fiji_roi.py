@@ -166,23 +166,34 @@ class RegionTracer:
         (i_indices, j_indices) = np.nonzero(b)
         return list(zip(i_indices, j_indices))
 
-    offset_order = [(0,1), (1,1), (1,0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1,1)]
+    offset_order = [(0,1), (1,1), (1,0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1,1), (0,1)]
 
     def boundary_parent_map(self):
         btups = sorted(self.boundary_tuples())
         bset = set(btups)
         chosen = set()
         result = {}
+        r = self.region
+        (maxi, maxj) = r.shape
         for t in btups:
             (ii, jj) = t
             choice = None
+            crossed_in = crossed_out = False
             for (di, dj) in self.offset_order:
                 i = ii + di
                 j = jj + dj
+                if (0 <= i < maxi) and (0 <= j < maxj):
+                    if r[i,j]:
+                        crossed_in = True
+                    else:
+                        crossed_out = True
+                if (choice is not None) and crossed_in and crossed_out:
+                    break
                 t2 = (i, j)
                 if t2 != t and t2 in bset and t2 not in chosen:
                     choice = t2
-            if choice is not None:
+            # don't add trivial looping pairs
+            if (choice is not None) and result.get(choice) != t:
                 result[t] = choice
                 chosen.add(choice)
         return result
