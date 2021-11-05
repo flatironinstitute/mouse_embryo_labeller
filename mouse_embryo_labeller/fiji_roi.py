@@ -9,6 +9,7 @@ https://imagej.nih.gov/ij/developer/api/ij/ij/io/RoiDecoder.html
 https://imagej.nih.gov/ij/developer/api/ij/ij/io/RoiDecoder.html
 """
 
+from os import truncate
 import numpy as np
 
 # File offset constants:
@@ -161,6 +162,129 @@ class RegionTracer:
         self.region = np.logical_and( (array >= lower), (array <= upper))
         self.boundary = boundary(self.region)
 
+    def combined_paths(self, sanity_limit=100):
+        parent_child = self.boundary_parent_map()
+        parents = set(parent_child.keys())
+        visited = set()
+        result = []
+        while parents:
+            p = parents.pop()
+            if p in visited:
+                continue
+            #print("tracing from", p)
+            visited.add(p)
+            horizon = {p}
+            distance = {p: 0}
+            back = {}
+            while horizon:
+                next_horizon = set()
+                for v in horizon:
+                    d = distance[v]
+                    for v2 in self.boundaries_near(v, here=False):
+                        if v2 not in visited:
+                            visited.add(v2)
+                            next_horizon.add(v2)
+                            distance[v2] = d + 1
+                            back[v2] = v
+                horizon = next_horizon
+            while distance:
+                (dd, furthest) = max((distance[v], v) for v in distance)
+                current = furthest
+                path = []
+                while distance.get(current) is not None:
+                    path.append(current)
+                    visited.add(current)
+                    del distance[current]
+                    current = back.get(current)
+                #print ("found path", path)
+                result.append(path)
+                #break
+            #break
+        return result
+
+    def best_loop(self):
+        paths = self.combined_paths()
+        if not paths:
+            return []
+        if len(paths) == 1:
+            return paths[0]
+        sorter = [(len(p), p) for p in paths]
+        sorter = sorted(sorter)
+        [[lf, front], [lb, back]] = sorter[-2:]
+        return front + list(reversed(back))
+
+
+    def combined_paths3(self, sanity_limit=100):
+        parent_child = self.boundary_parent_map()
+        #child_parent = {p: c for (c, p) in parent_child.items()}
+        parents = set(parent_child.keys())
+        #children = set(child_parent.keys())
+        visited = set()
+        result = []
+        for p in parents:
+            for v in self.boundaries_near(p, here=True):
+                #print("    testing boundary", v)
+                if v in visited:
+                    print("    already visited")
+                    continue
+                L = []
+                current = v
+                while current is not None:
+                    L.append(current)
+                    visited.add(current)
+                    next = None
+                    for v in self.boundaries_near(current, here=False):
+                        #print("        trying", v)
+                        if v not in visited:
+                            #print("        next!", v)
+                            next = v
+                            break
+                    current = next
+                print("path", L)
+                if len(L) > 2:
+                    result.append(L)
+        return result
+
+    #b_offsets = [(1,0), (0,-1), (-1,0), (0,1)]
+    b_offsets = []
+    for i in (-1, 0, 1):
+        for j in (-1, 0, 1):
+            if i != 0 or j != 0:
+                b_offsets.append((i, j))
+
+    def boundaries_near(self, ij, here=True):
+        (i, j) = ij
+        result = []
+        if here and self.is_boundary(ij):
+            result.append(ij)
+        for (di, dj) in self.b_offsets:
+            ii = i + di
+            jj = j + dj
+            iijj = (ii, jj)
+            if self.is_boundary(iijj):
+                result.append(iijj)
+        #print("boundaries near", ij, result)
+        return result
+
+    def is_boundary(self, ij):
+        (i, j) = ij
+        r = self.region
+        (maxi, maxj) = r.shape
+        if not ((0 <= i < maxi) and (0 <= j < maxj)):
+            return False
+        if r[i, j]:
+            #print("   inside boundary", ij)
+            return False
+        for (di, dj) in self.b_offsets:
+            ii = i + di
+            jj = j + dj
+            if (0 <= ii < maxi) and (0 <= jj < maxj):
+                if r[ii, jj]:
+                    #print("   is_boundary", ij, r[i,j], (ii,jj), r[ii,jj])
+                    return True
+        #print("   not boundary", ij)
+        return False # default
+
     def boundary_tuples(self):
         b = self.boundary
         (i_indices, j_indices) = np.nonzero(b)
@@ -209,22 +333,139 @@ class RegionTracer:
             for j in range(cols):
                 color = "yellow"
                 fill = True
-                if b[i,j]:
-                    color = "green"
-                    fill = True
-                elif r[i,j]:
+                if r[i,j]:
                     color = "cyan"
                     fill = True
-                f.circle(x=i, y=j, r=3, color=color, fill=fill)
+                    f.circle(x=i, y=j, r=4, color=color, fill=fill)
+                if b[i,j]:
+                    color = "blue"
+                    fill = True
+                    f.circle(x=i, y=j, r=3, color=color, fill=fill)
         bmap = self.boundary_parent_map()
         for ((i,j), (i2,j2)) in bmap.items():
-            f.arrow(i, j, i2, j2, 0.5, lineWidth=2, color="magenta")
+            f.arrow(i, j, i2, j2, 0.5, lineWidth=2, color="#77f")
         for path in self.combined_paths():
-            f.polyline(path, color="orange")
+            f.polyline(path, color="purple")
+            (sx, sy) = path[0]
+            f.circle(x=sx, y=sy, r=2, color="green")
+            (ex, ey) = path[-1]
+            f.circle(x=ex, y=ey, r=2, color="red")
+        loop = self.best_loop()
+        f.polygon(loop, color="rgba(0,0,0,0.2)")
         c.fit()
         return c
 
-    def combined_paths(self):
+    def combined_paths2(self, sanity_limit=100):
+        parent_child = self.boundary_parent_map()
+        child_parent = {p: c for (c, p) in parent_child.items()}
+        parents = set(parent_child.keys())
+        children = set(child_parent.keys())
+        roots = parents - children
+        leaves = children - parents
+        #print ("roots", list(roots))
+        #print ("leaves", list(leaves))
+        root_paths = {root: self.path(root, parent_child) for root in roots}
+        leaf_paths = {leaf: self.path(leaf, child_parent) for leaf in leaves}
+        def remove_path(path, reverse=False):
+            if reverse:
+                path = list(reversed(path))
+            first = path[0]
+            if first in root_paths:
+                del root_paths[first]
+            last = path[-1]
+            if last in leaf_paths:
+                del leaf_paths[last]
+        def add_path(path):
+            root_paths[path[0]] = path
+            leaf_paths[path[-1]] = list(reversed(path))
+        visited = set()
+        change = True  # to start the loop
+        while change:
+            change = False  # until proven otherwise
+            # combine tail to head
+            for last in list(leaf_paths.keys()):
+                if change:
+                    break
+                for first in list(root_paths.keys()):
+                    if self.adjacent(last, first):
+                        print("combining last to first", last, first)
+                        backward_front = leaf_paths[last]
+                        back = root_paths[first]
+                        if back[0] != backward_front[-1]:
+                            change = True
+                            front = list(reversed(backward_front))
+                            assert self.adjacent(front[-1], back[0]), repr((front[-1], back[0]))
+                            path = front + back
+                            remove_path(front)
+                            remove_path(back)
+                            add_path(path)
+                            break
+            # combine head to head
+            for first1 in list(leaf_paths.keys()):
+                if change:
+                    break
+                for first2 in list(leaf_paths.keys()):
+                    if first1 != first2 and self.adjacent(first1, first2):
+                        print("combining head to head", first1, first2)
+                        change = True
+                        backward_front = leaf_paths[first1]
+                        back = leaf_paths[first2]
+                        front = list(reversed(backward_front))
+                        assert self.adjacent(front[-1], back[0]), repr((front[-1], back[0]))
+                        path = front + back
+                        remove_path(backward_front, reverse=True)
+                        remove_path(back, reverse=True)
+                        add_path(path)
+                        break
+            # combine tail to tail
+            for first1 in list(root_paths.keys()):
+                if change:
+                    break
+                for first2 in list(root_paths.keys()):
+                    if first1 != first2 and self.adjacent(first1, first2):
+                        print("combinind tail to tail", first1, first2)
+                        change = True
+                        backward_front = root_paths[first1]
+                        front = list(reversed(backward_front))
+                        back = root_paths[first2]
+                        assert self.adjacent(front[-1], back[0]), repr((front[-1], back[0]))
+                        path = front + back
+                        remove_path(backward_front)
+                        remove_path(back)
+                        add_path(path)
+        #result = list(root_paths.values())
+        result = root_paths.values()
+        for path in result:
+            visited.update(path)
+        # any unvisited parent should lie on a loop -- add the loops
+        looping = parents - visited
+        while looping:
+            loop_start = looping.pop()
+            print("loop start", loop_start)
+            loop = self.path(loop_start, parent_child)
+            for v in loop:
+                if v in looping:
+                    looping.remove(v)
+                result.append(loop)
+        return result
+        # truncate overlapping end segments
+        truncated_results = []
+        for path in result:
+            cut = None
+            truncated_path = path
+            ln = len(path)
+            if ln > 5:
+                for i in range(ln):
+                    if self.adjacent(path[i], path[-i-1]):
+                        cut = i
+                        break
+            if cut:
+                print("cut", cut, "of", ln)
+                truncated_path = path[cut: -cut]
+            truncated_results.append(truncated_path)
+        return truncated_results
+
+    def combined_paths0(self, sanity_limit=10):
         parent_child = self.boundary_parent_map()
         child_parent = {p: c for (c, p) in parent_child.items()}
         parents = set(parent_child.keys())
@@ -249,8 +490,13 @@ class RegionTracer:
             del root_paths[root]
             for v in path:
                 visited.add(v)
-            path_done = False
-            while not path_done:
+            #path_done = False
+            forward_done = backward_done = False
+            count = 0
+            while not (forward_done and backward_done):
+                count += 1
+                if sanity_limit is not None and count > sanity_limit:
+                    raise ValueError("sanity limit exceeded")
                 back_path = None
                 # trace backwards from path end
                 last = path[-1]
@@ -262,8 +508,11 @@ class RegionTracer:
                         if (back_path is None) or (len(test_path) > len(back_path)):
                             back_path = test_path
                 if back_path is None:
-                    path_done = True
+                    backward_done = True
+                    print("backward is done")
                 else:
+                    print("found back path", back_path)
+                    forward_done = backward_done = False
                     path = path + back_path
                     for v in back_path:
                         visited.add(v)
@@ -271,18 +520,23 @@ class RegionTracer:
                     last = path[-1]
                     if last in root_paths:
                         del root_paths[last]
-                    forward_path = None
-                    for r in root_paths:
-                        if self.adjacent(last, r):
-                            test_path = root_paths[r]
-                            if (forward_path is None) or (len(test_path) < len(forward_path)):
-                                forward_path = test_path
-                    if forward_path is None:
-                        path_done = True
-                    else:
-                        for v in forward_path:
-                            visited.add(v)
-                        path = path + forward_path
+                last = path[-1]
+                forward_path = None
+                for r in root_paths:
+                    if self.adjacent(last, r):
+                        test_path = root_paths[r]
+                        if (forward_path is None) or (len(test_path) < len(forward_path)):
+                            forward_path = test_path
+                if forward_path is None:
+                    forward_done = True
+                    print("forward is done")
+                else:
+                    print("found forward path", forward_path)
+                    for v in forward_path:
+                        visited.add(v)
+                    del root_paths[forward_path[0]]
+                    forward_done = backward_done = False
+                    path = path + forward_path
             result.append(path)
             #for v in path:
             #    visited.add(v)
