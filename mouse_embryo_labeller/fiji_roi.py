@@ -116,8 +116,13 @@ class ROIdata:
         byte_seq = open(path, "rb").read()
         return self.load_from_bytes(byte_seq)
 
-    def widget(self, array, color="red"):
+    def widget(self, array, color=None):
         from jp_doodle import dual_canvas
+        if color is None:
+            if self.stroke_color:
+                color = "rgb" + repr(tuple(self.stroke_color[1:]))
+            else:
+                color = "red"
         (iheight, iwidth) = array.shape[:2]
         c = dual_canvas.DualCanvasWidget(width=iwidth, height=iheight)
         f = c.frame_region(
@@ -149,6 +154,11 @@ class ROIdata:
         assert len(byte_list) == 2, "must have 2 bytes " + repr(byte_list)
         s = bytes(byte_list)
         return np.frombuffer(s, dtype=big_endian_signed_short)[0]
+
+class VolumeTracer:
+
+    def __init__(self, volume_array, label_to_color):
+        pass
 
 class RegionTracer:
 
@@ -202,8 +212,9 @@ class RegionTracer:
             #break
         return result
 
-    def to_roi_data(self):
+    def to_roi_data(self, rgb=(255,0,0)):
         result = ROIdata()
+        result.stroke_color = [255] + list(rgb)
         result.points = [(j, i) for (i,j) in self.best_loop()]
         return result
 
