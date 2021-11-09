@@ -118,11 +118,6 @@ class ROIdata:
 
     def widget(self, array, color=None):
         from jp_doodle import dual_canvas
-        if color is None:
-            if self.stroke_color:
-                color = "rgb" + repr(tuple(self.stroke_color[1:]))
-            else:
-                color = "red"
         (iheight, iwidth) = array.shape[:2]
         c = dual_canvas.DualCanvasWidget(width=iwidth, height=iheight)
         f = c.frame_region(
@@ -132,9 +127,18 @@ class ROIdata:
         name = "array image"
         c.name_image_array(name, array)
         f.named_image(name, 0, iheight, iwidth, iheight, name=True)
-        f.polygon(self.points, color=color, close=False, fill=False)
+        #f.polygon(self.points, color=color, close=False, fill=False)
+        self.draw(f, color)
         c.fit()
         return c
+
+    def draw(self, frame, color=None):
+        if color is None:
+            if self.stroke_color:
+                color = "rgb" + repr(tuple(self.stroke_color[1:]))
+            else:
+                color = "red"
+        frame.polygon(self.points, color=color, close=False, fill=False)
 
     def int_to_byte_pair(self, integer):
         a = np.array(integer, dtype=big_endian_signed_short)
@@ -212,8 +216,9 @@ class RegionTracer:
             #break
         return result
 
-    def to_roi_data(self, rgb=(255,0,0)):
+    def to_roi_data(self, rgb=(255,0,0), dtype=freehand):
         result = ROIdata()
+        result.type = dtype
         result.stroke_color = [255] + list(rgb)
         result.points = [(j, i) for (i,j) in self.best_loop()]
         return result
