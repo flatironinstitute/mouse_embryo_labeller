@@ -202,6 +202,11 @@ class RegionTracer:
             #break
         return result
 
+    def to_roi_data(self):
+        result = ROIdata()
+        result.points = [(j, i) for (i,j) in self.best_loop()]
+        return result
+
     def best_loop(self):
         paths = self.combined_paths()
         if not paths:
