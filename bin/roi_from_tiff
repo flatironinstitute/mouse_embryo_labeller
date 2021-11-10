@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+
+usage = """
+
+USAGE:
+======
+
+% roi_from_tiff PATH_TO_LABELS_FILE.tiff
+
+Create FIJI ROI format files from nucleus label volume PATH_TO_LABELS_FILE.tiff.
+
+"""
+
+import sys
+from mouse_embryo_labeller import fiji_roi
+
+try:
+    assert len(sys.argv) == 2, "Please provide only one filename"
+    tiff_path = sys.argv[1]
+    print()
+    print("Dumping ROI files for", tiff_path)
+    fiji_roi.dump_tiff_to_roi(tiff_path)
+except:
+    print (usage)
+    raise
+

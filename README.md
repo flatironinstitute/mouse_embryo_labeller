@@ -48,6 +48,12 @@ Then you should be able to launch Jupyter and navigate to the test notebook
 at `mouse_embryo_labeller/notebooks/tests/load test.ipynb`.  Run the cells of the notebook
 and interact with the visualization to verify everything is working.
 
+## Creating FIJI ROI files from TIFF label volumes
+
+New as of 10 Nov 2021, the `mouse_embryo_labeller.fiji_roi` module and the `roi_from_tiff` command line
+script provide the ability to generate FIJI ROI files automatically for nucleus label TIFF segmentation files.
+[Please see the documentation page.](roi_from_tiff.md)
+
 ## Installation for volume components (new as of Aug 9 2021)
 
 To use the 3d volume viewer components and to generate 3d volume animations

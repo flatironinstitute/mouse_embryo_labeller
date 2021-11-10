@@ -62,7 +62,7 @@ class ROIdata:
         self.points = []
 
     def dump_to_bytes(self):
-        print ("dumping")
+        #print ("dumping")
         assert self.type in poly_types, "Dump for this type not yet supported: " + repr(type)
         points = self.points
         header = np.zeros((COORDINATES,), dtype=np.ubyte)
@@ -74,7 +74,7 @@ class ROIdata:
         self.int_to_index(header, TOP, self.ybase)
         self.int_to_index(header, N_COORDINATES, len(points))
         header[stroke_color_start: stroke_color_start+4] = self.stroke_color
-        print("header stroke color is", header[stroke_color_start: stroke_color_start+4])
+        #print("header stroke color is", header[stroke_color_start: stroke_color_start+4])
         L = [bytes(header)]
         for (x, y) in points:
             L.append(self.int_to_byte_pair(x - self.xbase))
@@ -188,16 +188,28 @@ class VolumeTracer:
             result[label] = roi
         return result
 
-    def dump_slice_roi_files(self, layer, to_folder, fn_format="layer_{layer}_label_{label}.roi"):
+    def dump_all_roi_files(self, to_folder, fn_format="label_{label}_layer_{layer}.roi", verbose=True):
+        if verbose:
+            print()
+            print("Dumping to folder", to_folder)
+        for layer in range(self.nlayers):
+            self.dump_slice_roi_files(layer, to_folder, fn_format, verbose)
+        if verbose:
+            print("Finished dumping ROI files.")
+
+    def dump_slice_roi_files(self, layer, to_folder, fn_format="label_{label}_layer_{layer}.roi", verbose=True):
         from os import makedirs
         makedirs(to_folder, exist_ok=True)
         rois = self.slice_rois(layer)
+        # ImageJ uses 1 based layer numbering
+        layer1 = layer + 1
         for label in rois:
             roi = rois[label]
-            fn = fn_format.format(layer=layer, label=label)
+            fn = fn_format.format(layer=layer1, label=label)
             path = os.path.join(to_folder, fn)
             roi.dump_to_path(path)
-            print("wrote", path)
+            if verbose:
+                print("wrote", path)
 
     def slice_widget(self, layer):
         from jp_doodle import dual_canvas
@@ -417,6 +429,17 @@ class RegionTracer:
         b = np.array(i2b, dtype=np.int)
         absd = np.abs(a - b)
         return absd.max() == 1
+
+def dump_tiff_to_roi(tiff_path, to_folder = None):
+    from . import tools
+    import os
+    assert os.path.isfile(tiff_path), "File not found: " + repr(tiff_path)
+    (folder, filename) = os.path.split(tiff_path)
+    prefix = filename.split(".")[0]
+    to_folder = prefix + "_ROI"
+    label_array = tools.load_tiff_array(tiff_path)
+    tracer = VolumeTracer(label_array)
+    tracer.dump_all_roi_files(to_folder)
 
 SAMPLE = (
     b'Iout\x00\xe4\x02\x00\x02H\x03\xca\x02t\x03\xf8\x00\x00\x00\x00\x00'
