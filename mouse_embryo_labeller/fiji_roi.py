@@ -9,8 +9,10 @@ https://imagej.nih.gov/ij/developer/api/ij/ij/io/RoiDecoder.html
 https://imagej.nih.gov/ij/developer/api/ij/ij/io/RoiDecoder.html
 """
 
-from os import truncate
+import os
 import numpy as np
+
+from mouse_embryo_labeller.timestamp_collection import labelled_int_item
 
 # File offset constants:
 VERSION_OFFSET = 4
@@ -117,17 +119,7 @@ class ROIdata:
         return self.load_from_bytes(byte_seq)
 
     def widget(self, array, color=None):
-        from jp_doodle import dual_canvas
-        (iheight, iwidth) = array.shape[:2]
-        c = dual_canvas.DualCanvasWidget(width=iwidth, height=iheight)
-        f = c.frame_region(
-            minx=0, miny=0, maxx=iwidth, maxy=iheight,
-            frame_minx=0, frame_miny=iheight, frame_maxx=iwidth, frame_maxy=0
-        )
-        name = "array image"
-        c.name_image_array(name, array)
-        f.named_image(name, 0, iheight, iwidth, iheight, name=True)
-        #f.polygon(self.points, color=color, close=False, fill=False)
+        (c, f) = array_canvas_and_frame(array)
         self.draw(f, color)
         c.fit()
         return c
@@ -138,7 +130,8 @@ class ROIdata:
                 color = "rgb" + repr(tuple(self.stroke_color[1:]))
             else:
                 color = "red"
-        frame.polygon(self.points, color=color, close=False, fill=False)
+        points = [(j, i) for (i, j) in self.points]
+        frame.polygon(points, color=color, close=False, fill=False)
 
     def int_to_byte_pair(self, integer):
         a = np.array(integer, dtype=big_endian_signed_short)
@@ -159,10 +152,70 @@ class ROIdata:
         s = bytes(byte_list)
         return np.frombuffer(s, dtype=big_endian_signed_short)[0]
 
+def array_canvas_and_frame(array):
+    from jp_doodle import dual_canvas
+    (iheight, iwidth) = array.shape[:2]
+    c = dual_canvas.DualCanvasWidget(width=iwidth, height=iheight)
+    f = c.frame_region(
+        minx=0, miny=0, maxx=iwidth, maxy=iheight,
+        frame_minx=0, frame_miny=iheight, frame_maxx=iwidth, frame_maxy=0
+    )
+    name = "array image"
+    c.name_image_array(name, array)
+    f.named_image(name, 0, iheight, iwidth, iheight, name=True)
+    return (c, f)
+
 class VolumeTracer:
 
-    def __init__(self, volume_array, label_to_color):
-        pass
+    def __init__(self, volume_labels, label_to_color=None, label_to_name={}):
+        [self.nlayers, self.nrows, self.ncols] = volume_labels.shape
+        label_to_color = label_to_color or {}
+        self.label_to_name = label_to_name or {}
+        self.label_to_color = label_to_color
+        self.volume_labels = volume_labels
+        self.fill_colors()
+
+    def slice_rois(self, layer):
+        layer_array = self.volume_labels[layer]
+        labels = np.unique(layer_array)
+        result = {}
+        for label in labels:
+            if label == 0:
+                continue
+            color = self.label_to_color[label]
+            tracer = RegionTracer(layer_array, label)
+            roi = tracer.to_roi_data(rgb=color)
+            result[label] = roi
+        return result
+
+    def dump_slice_roi_files(self, layer, to_folder, fn_format="layer_{layer}_label_{label}.roi"):
+        from os import makedirs
+        makedirs(to_folder, exist_ok=True)
+        rois = self.slice_rois(layer)
+        for label in rois:
+            roi = rois[label]
+            fn = fn_format.format(layer=layer, label=label)
+            path = os.path.join(to_folder, fn)
+            roi.dump_to_path(path)
+            print("wrote", path)
+
+    def slice_widget(self, layer):
+        from jp_doodle import dual_canvas
+        rois = self.slice_rois(layer)
+        layer_array = self.volume_labels[layer]
+        (c, f) = array_canvas_and_frame(layer_array)
+        for label in rois:
+            roi = rois[label]
+            roi.draw(f)
+        c.fit()
+        return c
+
+    def fill_colors(self):
+        from . import color_list
+        labels = np.unique(self.volume_labels)
+        for (index, label) in enumerate(labels):
+            self.label_to_color[label] = self.label_to_color.get(label, color_list.indexed_color(index))
+            self.label_to_name[label] = self.label_to_name.get(label, label)
 
 class RegionTracer:
 
@@ -216,11 +269,13 @@ class RegionTracer:
             #break
         return result
 
-    def to_roi_data(self, rgb=(255,0,0), dtype=freehand):
+    def to_roi_data(self, rgb=(255,0,0), dtype=freehand, version=228):
         result = ROIdata()
+        result.version = version
         result.type = dtype
         result.stroke_color = [255] + list(rgb)
-        result.points = [(j, i) for (i,j) in self.best_loop()]
+        #result.points = [(j, i) for (i,j) in self.best_loop()]
+        result.points = self.best_loop()
         return result
 
     def best_loop(self):
