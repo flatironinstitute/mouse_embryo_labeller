@@ -42,6 +42,13 @@ class Nucleus:
                 return
         indices = sorted(self.timestamp_indices)
         if len(indices) == 0:
+            # no timestamp -- mark it anyway.
+            points = [
+                [0, position + 0.25], 
+                [1, position + 0.5], 
+                [0, position + 0.75]
+                ]
+            on_frame.polygon(points, color=color)
             return
         start_index = None
         last_index = None
@@ -65,6 +72,10 @@ class Nucleus:
             emit_rectangle()
 
     def intersects_index_range(self, low_index, high_index):
+        tsi = self.timestamp_indices
+        if not tsi:
+            # unassigned nucleus -- make if available
+            return True
         for index in self.timestamp_indices:
             if low_index <= index <= high_index:
                 return True
@@ -86,7 +97,8 @@ class Nucleus:
 
     def draw_link(self, on_frame, nucleus_collection, in_range=False):
         parent_id = self.parent_id
-        if parent_id is not None:
+        tsi = self.timestamp_indices
+        if (len(tsi) > 0) and parent_id is not None:
             parent = nucleus_collection.get_nucleus(parent_id)
             color = self.html_color()
             position = self.rectangle_position(in_range=in_range)
