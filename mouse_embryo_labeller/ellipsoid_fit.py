@@ -252,14 +252,17 @@ class EllipsoidFitter:
         sf = self.sphere3d
         ef = self.ellipsoid3d
         M = self.transform_matrix()
-        invM = np.linalg.inv(M)
+        info = EllipsoidInfo(M)
+        #invM = np.linalg.inv(M)
+        invM = info.Minv
         d2 = 0.5 * self.diff
         with self.ellipsoid_canvas.delay_redraw():
             if reset:
                 ef.reset()
             self.draw_circles(self.ellipsoid3d, invM)
             self.draw_box(self.ellipsoid3d, self.mid, d2)
-            self.draw_points(self.ellipsoid3d)
+            #self.draw_points(self.ellipsoid3d)
+            info.annotate_points(self.ellipsoid3d, self.points, "green", "red")
         with self.sphere_canvas.delay_redraw():
             if reset:
                 sf.reset()
@@ -327,3 +330,69 @@ class EllipsoidFitter:
             if M is not None:
                 poly = self.transform_points(poly, M)
             frame3d.polygon(poly, color=color, fill=False)
+
+    def get_info(self):
+        """
+        Get the ellipsoid info corresponding to the last guess.
+        """
+        return EllipsoidInfo(self.transform_matrix())
+
+class EllipsoidInfo:
+
+    def __init__(self, transform_matrix):
+        """
+        Calculations for a 3d ellipsoid.
+        A point is on the ellipsoid if the transformed point lies on the unit sphere.
+        """
+        self.M = transform_matrix
+        self.Minv = np.linalg.inv(self.M)
+        [self.center] = apply_affine_transform(self.Minv, vv([0,0,0]))
+
+    def axes(self):
+        """
+        Return inverse transform of X Y Z offsets for the sphere space.
+        If the transformation was generated using EllipsoidFit above then these
+        axes will correspond to the major axes of the ellipsoid.
+        """
+        axis_vertices = vv([1,0,0], [0,1,0], [0,0,1])
+        translated_axis_vertices = apply_affine_transform(self.Minv, axis_vertices)
+        return translated_axis_vertices - self.center.reshape((1, 3))
+
+    def offset_to_ellipse(self, point3d, epsilon=10e-10):
+        """
+        return distances d and c and normalized vector n
+        
+        >>> (d, c, n) = info.offseet_to_ellipse(poing3d)
+
+        such that point3d + c * n is the center of the ellipsoid and
+        point3d + d * n lies on the ellipsoid on the line segment between point3d and the center.
+        The distance c will always be positive or zero but d will be negative if point3d
+        lies inside the ellipsoid and positive if outside.
+        """
+        [tp] = apply_affine_transform(self.M, vv(point3d))
+        to_origin = - tp
+        td = norm(to_origin)
+        if td < epsilon:
+            # pick an arbitrary direction
+            td = 0.0
+            tn = vv(1, 0, 0)
+        else:
+            tn = to_origin / td
+        [center, proj_on_ellipsoid] = apply_affine_transform(self.Minv, vv([0,0,0], tn))
+        to_center = proj_on_ellipsoid - center
+        proj_offset = norm(to_center)
+        n = to_center / proj_offset
+        c = norm(point3d - center)
+        d = c - proj_offset
+        return (d, c, n)
+
+    def annotate_points(self, f3d, points, inside_color, outside_color):
+        for p in points:
+            (d, c, n) = self.offset_to_ellipse(p)
+            if d <= 0:
+                color = inside_color
+                fill = False
+            else:
+                color = outside_color
+                fill = True
+            f3d.circle(p, r=2, color=color, fill=fill)
