@@ -12,6 +12,12 @@ def vv(*args):
 
 # 3d Affine transformation matrices:
 
+def apply_affine_transform(transform_matrix, points3d):
+    points1 = np.ones((len(points3d), 4))
+    points1[:, :3] = points3d
+    transformed = transform_matrix.dot(points1.T).T[:, :3]
+    return transformed
+
 def rotate_xy(theta):
     "Rotation around the z axis."
     cs = np.cos(theta)
@@ -201,10 +207,7 @@ class EllipsoidFitter:
         "Apply affine transformation to XYZ points."
         if M is None:
             M = self.transform_matrix()
-        points1 = np.ones((len(points), 4))
-        points1[:, :3] = points
-        transformed = M.dot(points1.T).T[:, :3]
-        return transformed
+        return apply_affine_transform(M, points)
 
     def penalty(self, guess=None):
         """
