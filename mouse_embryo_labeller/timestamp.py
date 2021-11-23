@@ -22,6 +22,15 @@ class Timestamp:
         self.special_labels = []
         self.reset_all_arrays()
 
+    def clean_label_to_nucleus(self):
+        result = {}
+        l2n = self.label_to_nucleus
+        if l2n:
+            for (k, v) in l2n.items():
+                if v is not None:
+                    result[k] = v
+        return result
+
     def nuclei_mask_slicing(self, nuclei_names=None):
         from mouse_embryo_labeller import geometry
         self.load_truncated_arrays()
@@ -29,7 +38,8 @@ class Timestamp:
         # release memory
         self.reset_all_arrays()
         mask = np.zeros(l3d.shape, dtype=np.int)
-        l2n = self.label_to_nucleus
+        #l2n = self.label_to_nucleus
+        l2n = self.clean_label_to_nucleus()
         if nuclei_names is None:
             labels = l2n.keys()
         else:
@@ -41,15 +51,15 @@ class Timestamp:
         return result
 
     def assign_index(self, index):
-        for nucleus in self.label_to_nucleus.values():
+        for nucleus in self.clean_label_to_nucleus().values():
             nucleus.add_timestamp_index(index)
 
     def nucleus_names(self):
-        return set(n.identifier for n in self.label_to_nucleus.values())
+        return set(n.identifier for n in self.clean_label_to_nucleus().values())
 
     def label_colors(self, nucleus_names=None):
         label_to_color = {}
-        for (label, nucleus) in self.label_to_nucleus.items():
+        for (label, nucleus) in self.clean_label_to_nucleus().items():
             if (nucleus_names is None) or (nucleus.identifier in nucleus_names):
                 label_to_color[label] = list(nucleus.color)
         return label_to_color
@@ -157,7 +167,7 @@ class Timestamp:
         return found
 
     def relabel(self, old_nucleus, replacement_nucleus):
-        l2n = self.label_to_nucleus
+        l2n = self.clean_label_to_nucleus()
         found = (old_nucleus in list(l2n.values()))
         if found:
             new_l2n = {}
