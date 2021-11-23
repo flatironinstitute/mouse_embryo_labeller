@@ -454,6 +454,8 @@ class VizController:
         self.set_nucleus_id(None)
         self.timestamp_collection.forget_nucleus(n, self)
         self.nucleus_collection.forget_nucleus_id(del_id, self.folder)
+        self.time_tree.reset_parameters()
+        self.calculate_stats()
         self.nucleus_collection.set_widget_options(callback=None, selected=None)
         #self.redraw()
         self.make_widget()
@@ -573,6 +575,7 @@ class VizController:
         n = nucleus.Nucleus(identifier, color, parent_id)
         self.nucleus_collection.add_nucleus(n)
         self.nucleus_collection.save_json(self.folder)
+        self.time_tree.reset_parameters()
         self.calculate_stats()
         # only switch to nucleus if no parent
         select_id = parent_id
