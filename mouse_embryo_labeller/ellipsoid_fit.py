@@ -123,6 +123,7 @@ for P in circles2:
     Pc[:, 1] = P[:, 2]
     circles.append(Pc)
 
+sphere_boundary_points = np.vstack(circles)
 
 HSIDE = 5
 SIDE = HSIDE * 2
@@ -462,6 +463,51 @@ class EllipsoidInfo:
         ds = cs - proj_offset
         return (ds, cs, ns)
 
+    def other_projection(self, other_info, sphere_points=sphere_boundary_points):
+        """
+        Project the points of this ellipse into the sphere space for the other ellipse.
+        Used for testing inclusion.
+        """
+        ellipse_points = apply_affine_transform(self.Minv, sphere_points)
+        other_sphere_points = apply_affine_transform(other_info.M, ellipse_points)
+        return other_sphere_points
+
+    def is_inside(self, other_info, epsilon=1e-10):
+        "Quickly test whether self is almost completely contained in other"
+        boundary_in_other_sphere = self.other_projection(other_info)
+        norms = norm(boundary_in_other_sphere, axis=1)
+        assert norms.shape == (len(boundary_in_other_sphere),)
+        return np.all(boundary_in_other_sphere < (1.0 + epsilon))
+
+    def proportion_inside_of(self, other_info, epsilon=1e-10):
+        """
+        Return approximate proportion of this ellipse inside the other ellipse by relative volume.
+        Returns 1 if completely inside and 0 if there is (nearly) no intersection.
+        """
+        points_in_other_sphere = self.other_projection(other_info, sphere_points)
+        norms = norm(points_in_other_sphere, axis=1)
+        assert norms.shape == (len(points_in_other_sphere),)
+        inside = (norms < (1.0 + epsilon))
+        (total,) = inside.shape
+        count = inside.astype(np.int).sum()
+        if count == total:
+            return 1
+        return count * (1.0 / total)
+
+    def relative_offset_to_center(self, point3d):
+        """
+        Linear measure of whether the point is near the center of the ellipse or the boundary.
+        Returns 0 at the center, 1 at the boundary of the ellipse and > 1 outside the ellipse.
+        """
+        projection = apply_affine_transform(self.M, [point3d])
+        return norm(projection[0])
+
+    def relative_offset_to_center_of(self, other_info):
+        """
+        Linear measure of how near the center of this ellipse is to the center of the other
+        ellipse.  Returns 0 at the center, 1 at the boundary of the ellipse and > 1 outside the ellipse.
+        """
+        return other_info.relative_offset_to_center(self.center)
 
     def annotate_points(self, f3d, points, inside_color, outside_color):
         for p in points:
