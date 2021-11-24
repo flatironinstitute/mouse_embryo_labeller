@@ -13,7 +13,7 @@ def vv(*args):
 # 3d Affine transformation matrices:
 
 def apply_affine_transform(transform_matrix, points3d):
-    points1 = np.ones((len(points3d), 4))
+    points1 = np.ones((len(points3d), 4), dtype=np.float)
     points1[:, :3] = points3d
     transformed = transform_matrix.dot(points1.T).T[:, :3]
     return transformed
@@ -407,7 +407,7 @@ class EllipsoidInfo:
         numerator = pithird * ((6.0 * V) ** (2.0/3.0))
         return numerator / A
 
-    def offset_to_ellipse(self, point3d, epsilon=10e-10):
+    def offset_to_ellipse(self, point3d, epsilon=1e-10):
         """
         return distances d and c and normalized vector n
         
@@ -418,6 +418,7 @@ class EllipsoidInfo:
         The distance c will always be positive or zero but d will be negative if point3d
         lies inside the ellipsoid and positive if outside.
         """
+        point3d = np.array(point3d, dtype=np.float)
         [tp] = apply_affine_transform(self.M, vv(point3d))
         to_origin = - tp
         td = norm(to_origin)
@@ -434,6 +435,33 @@ class EllipsoidInfo:
         c = norm(point3d - center)
         d = c - proj_offset
         return (d, c, n)
+
+    def offsets_to_ellipse(self, points3d, epsilon=1e-10):
+        points3d = np.array(points3d, dtype=np.float)
+        tps = apply_affine_transform(self.M, points3d)
+        (N, three) = tps.shape
+        assert three == three, "bad shape: " + repr(tps.shape)
+        to_origin = - tps
+        tds = norm(to_origin, axis=1)
+        assert tds.shape == (N,), repr(tds.shape)
+        too_small = tds < epsilon
+        tds = np.where(too_small, 1.0, tds)  # remove too small divisors to avoid errors
+        tns = to_origin / (tds.reshape((N, 1)))
+        tns = np.where(too_small.reshape((N, 1)), vv([1, 0, 0]), tns)  # arbitrary normal where too small
+        proj_on_ellipsoid = apply_affine_transform(self.Minv, tns)
+        center = self.center
+        reshaped_center = center.reshape((1,3))
+        to_center = proj_on_ellipsoid - reshaped_center
+        proj_offset = norm(to_center, axis=1)
+        too_small = proj_offset < epsilon
+        a = self.axis_lengths()[0]
+        proj_offset = np.where(too_small, a, proj_offset)  # avoid errors
+        ns = to_center / (proj_offset.reshape((N, 1)))
+        ns = np.where(too_small.reshape((N, 1)), vv(1,0,0), ns)
+        cs = norm(points3d - reshaped_center, axis=1)
+        ds = cs - proj_offset
+        return (ds, cs, ns)
+
 
     def annotate_points(self, f3d, points, inside_color, outside_color):
         for p in points:
