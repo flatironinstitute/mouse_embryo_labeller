@@ -45,7 +45,7 @@ class ArrayFitter:
         If point_limit is not None and less than the number of available points, a random sample of points up to the limit
         will be used for the fit (for greater speed).
 
-        If display is True then the fit method will attempt to display a jupyter widget animating the fit procdess.
+        If display is True then the fit method will attempt to display a jupyter widget animating the fit process.
 
         If the upper_limit is not specified it will default to the maximum value in the array.
         """
@@ -456,12 +456,8 @@ class EllipsoidInfo:
         return ellipsoid_surface_area(a, b, c)
 
     def sphericity(self):
-        # https://en.wikipedia.org/wiki/Sphericity
-        V = self.volume()
-        A = self.surface_area()
-        pithird = np.pi ** (1.0/3.0)
-        numerator = pithird * ((6.0 * V) ** (2.0/3.0))
-        return numerator / A
+        [a, b, c] = self.axis_lengths()
+        return ellipsoid_sphericity(a, b, c)
 
     def offset_to_ellipse(self, point3d, epsilon=1e-10):
         """
