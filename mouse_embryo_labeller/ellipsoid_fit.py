@@ -560,6 +560,22 @@ class EllipsoidInfo:
         """
         return other_info.relative_offset_to_center(self.center)
 
+    def center_distance_to_center_of(self, other_info):
+        "Distance between the center of this ellipsoid to the center of the other ellipsoid."
+        return norm(self.center - other_info.center)
+
+    def center_distance_to_surface_of(self, other_info, epsilon=1e-10):
+        "Distance between the center of this ellipsoid to the projection of the center onto the surface of the other ellipsoid."
+        [in_sphere] = apply_affine_transform(other_info.M, [self.center])
+        assert in_sphere.shape == (3,)
+        n = norm(in_sphere)
+        if n > epsilon:
+            on_sphere = in_sphere / n
+        else:
+            on_sphere = vv(1, 0, 0)  # arbitrary, not really right(?)
+        [center_in_ellipse, on_ellipse_surface] = apply_affine_transform(other_info.Minv, [in_sphere, on_sphere])
+        return norm(center_in_ellipse - on_ellipse_surface)
+
     def annotate_points(self, f3d, points, inside_color, outside_color):
         for p in points:
             (d, c, n) = self.offset_to_ellipse(p)
