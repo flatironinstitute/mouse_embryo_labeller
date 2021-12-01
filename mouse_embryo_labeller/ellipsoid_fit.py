@@ -9,7 +9,7 @@ from numpy.linalg import norm
 
 class ArrayFitter:
 
-    def __init__(self, array3d, di=1.0, dj=1.0, dk=1.0):
+    def __init__(self, array3d, di=2.0, dj=0.208, dk=0.208):
         """
         Container for fitting ellipoids to regions of the 3d array array3d.
         The di, dj, dk give the relative conversion of i, j, k indices to real dimensions.
