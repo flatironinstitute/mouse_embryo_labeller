@@ -423,9 +423,13 @@ class EllipsoidInfo:
         Calculations for a 3d ellipsoid.
         A point is on the ellipsoid if the transformed point lies on the unit sphere.
         """
+        transform_matrix = np.array(transform_matrix, dtype=np.float)
         self.M = transform_matrix
         self.Minv = np.linalg.inv(self.M)
         [self.center] = apply_affine_transform(self.Minv, vv([0,0,0]))
+
+    def json_object(self):
+        return self.M.tolist()
 
     def axes(self):
         """
