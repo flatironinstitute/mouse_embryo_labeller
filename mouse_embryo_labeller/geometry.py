@@ -3,6 +3,7 @@ from mouse_embryo_labeller.timestamp import COLORMAP
 from mouse_embryo_labeller.nucleus import nucleus_from_json
 import numpy as np
 from pprint import pprint
+from mouse_embryo_labeller import ellipsoid_fit
 
 def positive_slicing(M):
     """
@@ -135,6 +136,15 @@ def timestamp_geometry(ts):
     ts.reset_all_arrays()  # dont' hog memory
     return geometry
 
+def preprocess_geometry_to_json(tsc, json_path):
+    import json
+    f = open(json_path, "w")
+    geometry = timestamp_collection_geometry(tsc)
+    geometry = add_ellipsoids(tsc, geometry)
+    json.dump(geometry, f, indent=4, sort_keys=True)
+    f.close()
+    print("Dumped json geometry to", repr(json_path))
+
 def timestamp_collection_geometry(tsc):
     """
     Compute extents for labels with a timestamp as slicing_info dictionaries.  
@@ -191,6 +201,7 @@ def timestamp_collection_geometry(tsc):
     slicing = None
     ts_geometries = {}
     for (id, ts) in id2ts.items():
+        print("slicing ts", ts)
         str_id = str(id)  # json requires string keys
         g = ts_geometries[str_id] = timestamp_geometry(ts)
         ts_slicing = np.array(g["slicing"])
@@ -202,6 +213,36 @@ def timestamp_collection_geometry(tsc):
     geometry["timestamps"] = ts_geometries
     tsc.geometry = geometry
     return geometry
+
+def add_ellipsoids(tsc, tsc_geometry, di=2.0, dj=0.208, dk=0.208):
+    "Add embryo and nucleus ellipsoids to timestamp collection geometry."
+    slicing = tsc_geometry["slicing"]
+    tsc_geometry["distortion"] = [di, dj, dk]
+    id2ts = tsc.id_to_timestamp
+    ts_geometries = tsc_geometry["timestamps"]
+    for (id, ts) in id2ts.items():
+        print("surrounding ts", id)
+        str_id = str(id)  # json requires string keys
+        tsg = ts_geometries[str_id]
+        ts.load_truncated_arrays()
+        labels = ts.unique_labels
+        label_array = ts.l3d_truncated
+        #l2n = ts.label_to_nucleus
+        sliced_labels = apply_slicing(slicing, label_array)
+        fitter = ellipsoid_fit.ArrayFitter(sliced_labels, di, dj, dk)
+        info = fitter.fit_ellipse_to_range(lower_limit=1)
+        tsg["ellipse"] = info.json_object()
+        label_geometries = tsg["labels"]
+        for label in labels:
+            if label == 0:
+                continue
+            print("    surrounding label", label)
+            string_label = str(label)  # json requires string keys
+            info = fitter.fit_ellipse_to_range(lower_limit=label, upper_limit=label)
+            lg = label_geometries[string_label]
+            lg["ellipse"] = info.json_object()
+        ts.reset_all_arrays()  # dont' hog memory
+    return tsc_geometry
 
 def draw_octohedron(on_frame_3d, center, dimensions, color, opacity=0.3, shrink=0.7, distortion=[3,1,1], outline_color="rgb(100,100,100)"):
     # XXXX NOT USED
