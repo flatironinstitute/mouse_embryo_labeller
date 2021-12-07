@@ -164,7 +164,8 @@ class GeometryViewer:
         widen_notebook()
         g = self.geometry
         tss = g["timestamps"]
-        tsids = [int(x) for x in tss.keys()]
+        tsids = sorted([int(x) for x in tss.keys()])
+        self.tsids = tsids
         minid = min(tsids)
         maxid = max(tsids)
         ellipsoid_canvas = self.ellipsoid_canvas = dual_canvas.DualCanvasWidget(width=side, height=side)
@@ -178,10 +179,11 @@ class GeometryViewer:
         self.ellipsoid3d.orbit(center3d=self.offset, radius=3*r, shift2d=(r/2, r/3))
         self.fitter.draw_box(self.ellipsoid3d, self.offset, self.offset * 1.2, "pink")
         ellipsoid_canvas.fit()
+        self.info = widgets.HTML(value="Info here.")
         self.draw_ts(minid) # temp
         self.slider = widgets.IntSlider(description="timestamp", min=minid, max=maxid, value=minid)
         self.slider.observe(self.change_timestamp, "value")
-        widget = widgets.VBox(children=[self.slider, ellipsoid_canvas])
+        widget = widgets.VBox(children=[self.slider, ellipsoid_canvas, self.info])
         #widget = ellipsoid_canvas
         self.widget = widget
         return widget
@@ -192,6 +194,7 @@ class GeometryViewer:
 
     def draw_ts(self, tsid):
         #print ("drawing ts", tsid)
+        self.info.value = "tsid: " + repr(tsid)
         self.timestamp = tsid
         g = self.geometry
         tss = g["timestamps"]
