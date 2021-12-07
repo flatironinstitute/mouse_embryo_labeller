@@ -155,10 +155,18 @@ class GeometryViewer:
         self.distortion = np.array(g["distortion"])
         self.offset = self.dimensions * self.distortion
         self.radius = self.offset.max()
+        self.timestamp = None
 
     def widget(self, side=800):
         from jp_doodle import dual_canvas, nd_frame
         import ipywidgets as widgets
+        from jp_doodle.data_tables import widen_notebook
+        widen_notebook()
+        g = self.geometry
+        tss = g["timestamps"]
+        tsids = [int(x) for x in tss.keys()]
+        minid = min(tsids)
+        maxid = max(tsids)
         ellipsoid_canvas = self.ellipsoid_canvas = dual_canvas.DualCanvasWidget(width=side, height=side)
         (maxx, maxy, maxz) = self.offset * 2
         self.ellipsoid2d = ellipsoid_canvas.frame_region(
@@ -170,18 +178,28 @@ class GeometryViewer:
         self.ellipsoid3d.orbit(center3d=self.offset, radius=3*r, shift2d=(r/2, r/3))
         self.fitter.draw_box(self.ellipsoid3d, self.offset, self.offset * 1.2, "pink")
         ellipsoid_canvas.fit()
-        self.draw_ts(4) # temp
-        widget = ellipsoid_canvas
+        self.draw_ts(minid) # temp
+        self.slider = widgets.IntSlider(description="timestamp", min=minid, max=maxid, value=minid)
+        self.slider.observe(self.change_timestamp, "value")
+        widget = widgets.VBox(children=[self.slider, ellipsoid_canvas])
+        #widget = ellipsoid_canvas
+        self.widget = widget
         return widget
 
+    def change_timestamp(self, ignored):
+        timestamp = self.slider.value
+        self.draw_ts(timestamp)
+
     def draw_ts(self, tsid):
-        print ("drawing ts", tsid)
+        #print ("drawing ts", tsid)
+        self.timestamp = tsid
         g = self.geometry
         tss = g["timestamps"]
         tsg = tss.get(str(tsid))
         tsellipse = tsg["ellipse"]
         tsinfo = ellipsoid_fit.EllipsoidInfo(tsellipse)
         with self.ellipsoid_canvas.delay_redraw():
+            self.ellipsoid3d.reset()
             color = "rgb(130,200,255)"
             self.fitter.draw_circles(self.ellipsoid3d, tsinfo.Minv, color=color)
             labels = tsg["labels"]
@@ -190,7 +208,7 @@ class GeometryViewer:
                 if color is None:
                     color = [150,150,150]
                 scolor = "rgb%s" % (tuple(color),)
-                print(scolor)
+                #print(scolor)
                 lellipse = info["ellipse"]
                 linfo = ellipsoid_fit.EllipsoidInfo(lellipse)
                 self.fitter.draw_circles(self.ellipsoid3d, linfo.Minv, color=scolor)
