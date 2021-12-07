@@ -212,6 +212,8 @@ class GeometryViewer:
         arrays = self.animation_arrays
         if not arrays:
             arrays = self.get_animation_arrays()
+        # add ten frames fo the last array to the end of the animation
+        arrays = list(arrays) + ([arrays[-1]] * 10)
         imageio.mimsave(to_path, arrays, format="GIF", duration=duration)
         print("Saved", to_path, "as animated GIF.")
 
