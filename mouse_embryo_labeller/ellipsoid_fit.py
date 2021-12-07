@@ -349,9 +349,9 @@ class EllipsoidFitter:
             self.draw_points(self.sphere3d, M)
             self.draw_box(self.sphere3d, self.mid, d2, None, M)
 
-    def draw_circles(self, f3d, M=None):
+    def draw_circles(self, f3d, M=None, color="cyan"):
         for circle in circles:
-            self.draw_points(f3d, points=circle, M=M, color="cyan", polygon=True)
+            self.draw_points(f3d, points=circle, M=M, color=color, polygon=True)
 
     def draw_points(self, f3d, M=None, points=None, color="blue", polygon=False):
         if points is None:
