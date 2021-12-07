@@ -136,14 +136,69 @@ def timestamp_geometry(ts):
     ts.reset_all_arrays()  # dont' hog memory
     return geometry
 
-def preprocess_geometry_to_json(tsc, json_path):
+def preprocess_geometry_to_json(tsc, json_path, di=2.0, dj=0.208, dk=0.208):
     import json
     f = open(json_path, "w")
     geometry = timestamp_collection_geometry(tsc)
-    geometry = add_ellipsoids(tsc, geometry)
+    geometry = add_ellipsoids(tsc, geometry, di=di, dj=dj, dk=dk)
     json.dump(geometry, f, indent=4, sort_keys=True)
     f.close()
     print("Dumped json geometry to", repr(json_path))
+
+class GeometryViewer:
+
+    def __init__(self, tsc_geometry):
+        dummy_points = np.zeros((3,3))  # just to get access to fitter methods
+        self.fitter = ellipsoid_fit.EllipsoidFitter(dummy_points)
+        g = self.geometry = tsc_geometry
+        self.dimensions = np.array(g["dimensions"])
+        self.distortion = np.array(g["distortion"])
+        self.offset = self.dimensions * self.distortion
+        self.radius = self.offset.max()
+
+    def widget(self, side=800):
+        from jp_doodle import dual_canvas, nd_frame
+        import ipywidgets as widgets
+        ellipsoid_canvas = self.ellipsoid_canvas = dual_canvas.DualCanvasWidget(width=side, height=side)
+        (maxx, maxy, maxz) = self.offset * 2
+        self.ellipsoid2d = ellipsoid_canvas.frame_region(
+            0, 0, side, side,
+            0, 0, maxx, maxy,
+        )
+        self.ellipsoid3d = nd_frame.ND_Frame(self.ellipsoid_canvas, self.ellipsoid2d)
+        r = self.radius
+        self.ellipsoid3d.orbit(center3d=self.offset, radius=3*r, shift2d=(r/2, r/3))
+        self.fitter.draw_box(self.ellipsoid3d, self.offset, self.offset * 1.2, "pink")
+        ellipsoid_canvas.fit()
+        self.draw_ts(4) # temp
+        widget = ellipsoid_canvas
+        return widget
+
+    def draw_ts(self, tsid):
+        print ("drawing ts", tsid)
+        g = self.geometry
+        tss = g["timestamps"]
+        tsg = tss.get(str(tsid))
+        tsellipse = tsg["ellipse"]
+        tsinfo = ellipsoid_fit.EllipsoidInfo(tsellipse)
+        with self.ellipsoid_canvas.delay_redraw():
+            color = "rgb(130,200,255)"
+            self.fitter.draw_circles(self.ellipsoid3d, tsinfo.Minv, color=color)
+            labels = tsg["labels"]
+            for info in labels.values():
+                color = info.get("color")
+                if color is None:
+                    color = [150,150,150]
+                scolor = "rgb%s" % (tuple(color),)
+                print(scolor)
+                lellipse = info["ellipse"]
+                linfo = ellipsoid_fit.EllipsoidInfo(lellipse)
+                self.fitter.draw_circles(self.ellipsoid3d, linfo.Minv, color=scolor)
+                #break
+        r = self.radius
+        off = self.offset
+        self.ellipsoid3d.orbit_all(2 * r, off)
+
 
 def timestamp_collection_geometry(tsc):
     """
