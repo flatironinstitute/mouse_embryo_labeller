@@ -156,6 +156,8 @@ class GeometryViewer:
         self.offset = self.dimensions * self.distortion
         self.radius = self.offset.max()
         self.timestamp = None
+        self._widget = None
+        self.animation_arrays = []
 
     def widget(self, side=800):
         from jp_doodle import dual_canvas, nd_frame
@@ -185,8 +187,33 @@ class GeometryViewer:
         self.slider.observe(self.change_timestamp, "value")
         widget = widgets.VBox(children=[self.slider, ellipsoid_canvas, self.info])
         #widget = ellipsoid_canvas
-        self.widget = widget
+        self._widget = widget
         return widget
+
+    def get_animation_arrays(self):
+        import time
+        assert self.widget is not None, "Please create a widget before making an animation."
+        tsids = self.tsids
+        arrays = self.animation_arrays = []
+        for tsid in tsids:
+            self.draw_ts(tsid)
+            array = self.ellipsoid_canvas.pixels_array()
+            # make the array non-transparent
+            alpha = array[:,:,3].copy()
+            alpha = alpha.reshape(alpha.shape + (1,))
+            white = np.array([255,255,255,255]).reshape((1,1,4))
+            array1 = np.where(alpha > 0, array, white).astype(np.uint8)
+            array1[:,:,3] = 255
+            arrays.append(array1)
+        return arrays
+
+    def save_animated_gif(self, to_path="geometry.gif", duration=0.2):
+        import imageio
+        arrays = self.animation_arrays
+        if not arrays:
+            arrays = self.get_animation_arrays()
+        imageio.mimsave(to_path, arrays, format="GIF", duration=duration)
+        print("Saved", to_path, "as animated GIF.")
 
     def change_timestamp(self, ignored):
         timestamp = self.slider.value
