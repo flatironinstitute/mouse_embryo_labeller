@@ -3,6 +3,8 @@ Miscellaneous functionality.
 """
 
 import os
+import glob
+import shutil
 from PIL import Image, ImageSequence
 import numpy as np
 from mouse_embryo_labeller import timestamp
@@ -250,6 +252,110 @@ def scale_channel(channel_array, maximum=256.0):
     factor = maximum * 1.0 / channel_array.max()
     result[:] = factor * channel_array
     return result
+
+GROUND_TRUTH_FOLDER = '/Users/awatters/misc/LisaBrown/embryo/WholeEmbryo'
+
+class GroundTruthProcessor:
+
+    def __init__(self, folder=GROUND_TRUTH_FOLDER):
+        folder = os.path.expanduser(folder)
+        folder = os.path.abspath(folder)
+        assert os.path.isdir(folder), "cannot find folder: " + repr(folder)
+        self.folder = folder
+
+    def delete_collections(self):
+        pattern = self.folder + "collection_*"
+        to_delete = glob.glob(pattern)
+        print("Deleting", len(to_delete), "collections.")
+        for path in to_delete:
+            shutil.rmtree(path)
+            print("   ", repr(path), "deleted.")
+
+    def make_all_collections(self, stride=4):
+        prefixes = set()
+        for filename in os.listdir(self.folder):
+            if "collection" in filename:
+                continue  # don't process collections
+            split = filename.split("_")
+            if len(split) == 2:
+                prefixes.add(split[0])
+        print("Now making", len(prefixes), "collections.")
+        destinations = []
+        for prefix in sorted(prefixes):
+            d = self.make_collection(prefix)
+            destinations.append(d)
+        return destinations
+
+    def make_collection(self, prefix, stride=4):
+        # prefix like "F22"
+        assert "_" not in prefix, "prefix should not incude underscore: " + repr(prefix)
+        folder_pattern = self.folder + "/" + str(prefix) + "_*"
+        prefix_folders = glob.glob(folder_pattern)
+        assert len(prefix_folders) > 0, "no folders found for prefix: " + repr(folder_pattern)
+        suffix_integers = []
+        for path in prefix_folders:
+            suffix = path.split("_")[-1]
+            try:
+                intsuffix = int(suffix)
+            except ValueError:
+                print("   SKIPPING BAD SUFFIX", repr((suffix, path)))
+                continue
+            suffix_integers.append(intsuffix)
+        suffix_integers.sort()
+        prefix_destination = self.folder + "/collection_" + prefix
+        print()
+        print("============ Creating collection", prefix_destination)
+        if not os.path.isdir(prefix_destination):
+            os.mkdir(prefix_destination)
+        helper = FileSystemHelper(prefix_destination)
+        nc = helper.stored_nucleus_collection()
+        print("Stored empty nucleus collection", nc.manifest_path)
+        ts_counter = 0
+        for si in suffix_integers:
+            suffix_folder = "%s/%s_%s" % (self.folder, prefix, si)
+            print("processing folder", suffix_folder)
+            assert os.path.isdir(suffix_folder), "suffix folder not found: " + repr(suffix_folder)
+            if len(os.listdir(suffix_folder)) == 0:
+                print ("   SKIPPING EMPTY FOLDER", suffix_folder)
+                continue
+            im_in = self.get_array(suffix_folder, "*/masks/*_masks_in_*.npy", stride)
+            im_mi = self.get_array(suffix_folder, "*/masks/*_masks_mi_*.npy", stride)
+            im_im = self.get_array(suffix_folder, "*/images/*_image_*.npy", stride)
+            assert im_in.shape == im_mi.shape and im_mi.shape == im_im.shape, "bad shapes "+repr((im_in.shape, im_mi.shape, im_im.shape))
+            labels = im_in.copy()
+            intensities = scale_channel(im_im)
+            #channels = np.zeros(intensities.shape + (3,), dtype=intensities.dtype)
+            #channels[:, :, :, 1] = intensities
+            #channels[:, :, :, 2] = intensities
+            mi_unique = set(np.unique(im_mi)) - {0}
+            if mi_unique:
+                in_unique = set(np.unique(im_in)) - {0}
+                common = mi_unique & in_unique
+                assert not common, "normal and mitotic labels intersect " + repr(common)
+                mitotic = (im_mi > 0)
+                labels = np.where(mitotic, im_mi, labels)
+                #channels[:, :, :, 0] = np.where(mitotic, 255, 0)
+            #ts = helper.add_timestamp(ts_counter, channels, labels)
+            ts = helper.add_timestamp(ts_counter, intensities, labels)
+            if mi_unique:
+                print("mitotic labels", mi_unique)
+                ts.special_labels = list(mi_unique)
+                ts.save_mapping()
+            #print("   channels", channels.shape, "labels", labels.shape)
+            print("::: timestamp", ts.manifest)
+            ts_counter += 1
+        tsc = helper.stored_timestamp_collection()
+        print("Stored timestamp collection", tsc.manifest_path)
+        return prefix_destination
+
+    def get_array(self, suffix_folder, glob_pattern, stride):
+        full_pattern = suffix_folder + "/" + glob_pattern
+        matches = glob.glob(full_pattern)
+        assert len(matches) == 1, "Wrong match count: " + repr((full_pattern, matches))
+        [path] = matches
+        assert os.path.isfile(path), "not a file: " + repr(path)
+        result = np.load(path)
+        return result[:, ::stride, ::stride]
 
 def get_example_nucleus_collection(from_folder=EXAMPLE_FOLDER):
     return nucleus_collection.collection_from_json(from_folder)

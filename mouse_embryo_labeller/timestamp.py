@@ -118,7 +118,7 @@ class Timestamp:
         extruded = np.zeros(l.shape, dtype=l.dtype)
         max_intensity = np.zeros(r.shape, dtype=r.dtype)
         mask = extruded[0]
-        max_mask = r[0]
+        max_mask = r[0].copy()
         for i in range(len(extruded)):
             layer = l[i]
             nz = (layer != 0)
@@ -135,6 +135,7 @@ class Timestamp:
             from_path = self.save_path
         f = open(from_path)
         json_info = json.load(f)
+        self.special_labels = json_info.get("special_labels", [])
         assert json_info["timestamp"] == self.identifier, "wrong timestamp in json file: " + repr((json_info["timestamp"],self.identifier))
         f.close()
         label_to_nucleus_id = json_info["label_to_nucleus_id"]
@@ -213,7 +214,8 @@ class Timestamp:
             blurred_image = gaussian_filter(r_slice, sigma=sigma)
             r_slice = blurred_image
         if colorize:
-            r_slice = false_colors(r_slice)
+            if len(r_slice.shape) == 2:
+                r_slice = false_colors(r_slice)
         elif normalized:
             r_slice = normalize(r_slice)
         a = self.l3d_truncated
@@ -286,6 +288,7 @@ class Timestamp:
         return {
             "timestamp": self.identifier,
             "label_to_nucleus_id": label_to_nucleus_id,
+            "special_labels": [int(x) for x in self.special_labels],
         }
 
     def get_truncated_arrays(self, test_array=None):
@@ -398,7 +401,7 @@ def special_boundary(labels_array, special_labels, normal_color=white, special_c
         background_color = background_color.reshape((labels_array.size, 1))
     else:
         # full color background
-        assert background_dim == 3, "only backgrounds up to 3 dimensions supported."
+        assert background_dim == 3, "only backgrounds up to 3 dimensions supported " + repr(background_color.shape)
         background_color = background_color.reshape((labels_array.size, 3))
     special_array = select_labels(labels_array, special_labels)
     special_boundary = boundary(special_array).astype(np.int)
