@@ -5,6 +5,43 @@ Compute vector offsets for two 3D label volumes
 import numpy as np
 
 from mouse_embryo_labeller.color_list import indexed_color
+from mouse_embryo_labeller.timestamp import big_choose
+
+def unify_tracks(
+    A,  # label array
+    A_label_2_track,   # mapping of labels in A to track numbers
+    B,  # label array
+    B_label_2_track,   # mapping of labels in A to track numbers
+):
+    """
+    Remap contents of A and B replacing arbitrary labels with corresponding tracks.
+    Any labels with no track number assigned will be remapped to a "fresh" number.
+    
+    returns (A_remapped, B_remapped)
+    """
+    Alabels = set(np.unique(A))
+    Blabels = set(np.unique(B))
+    A2t = A_label_2_track.copy()  # copy for modification
+    B2t = B_label_2_track.copy()  # copy for modification
+    tracks = set(A2t.values()) | set(B2t.values())
+    A_remapped = A.copy()
+    B_remapped = B.copy()
+    max_track = max(*tracks)
+    for (Ar, l2t, labels) in [(A_remapped, A2t, Alabels), (B_remapped, B2t, Blabels)]:
+        for label in labels:
+            if label not in l2t:
+                fresh_track = max_track = max_track + 1
+                tracks.add(fresh_track)
+                l2t[label] = fresh_track
+        max_label = max(*labels)
+        choices = np.zeros((max_label+1,), dtype=np.int)
+        print(max_label, choices)
+        print(l2t)
+        for label in l2t:
+            if label in labels:
+                choices[label] = l2t[label]
+        Ar[:] = big_choose(Ar, choices)
+    return (A_remapped, B_remapped)
 
 def get_label_vector_field(
     old_label_array, 
