@@ -22,7 +22,7 @@ def make_tracks_from_haydens_json_graph(json_graph):
         [src, dst] = thing["EndNodes"]
         mapping[src] = dst
     track_starts = sorted(set(mapping.keys()) - set(mapping.values()))
-    string_to_track = { s: count for (count, s) in enumerate(track_starts) }
+    string_to_track = { s: count+1 for (count, s) in enumerate(track_starts) }
     for start in track_starts:
         track = string_to_track[start]
         next = mapping.get(start)
@@ -65,17 +65,22 @@ def unify_tracks(
     max_track = max(*tracks)
     for (Ar, l2t, labels) in [(A_remapped, A2t, Alabels), (B_remapped, B2t, Blabels)]:
         for label in labels:
-            if label not in l2t:
+            if label not in l2t and label>0:
                 fresh_track = max_track = max_track + 1
                 tracks.add(fresh_track)
                 l2t[label] = fresh_track
-        max_label = max(*labels)
+        max_label = 0
+        if len(labels) == 1:
+            max_label = list(labels)[0]
+        else:
+            max_label = max(*labels)
         choices = np.zeros((max_label+1,), dtype=np.int)
         #print(max_label, choices)
         #print(l2t)
         for label in l2t:
             if label in labels:
                 choices[label] = l2t[label]
+        assert choices[0] == 0, "bad choice for 0 " + repr((choices, l2t))
         Ar[:] = big_choose(Ar, choices)
     return (A_remapped, B_remapped)
 
