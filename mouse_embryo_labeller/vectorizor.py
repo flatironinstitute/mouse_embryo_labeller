@@ -7,6 +7,42 @@ import numpy as np
 from mouse_embryo_labeller.color_list import indexed_color
 from mouse_embryo_labeller.timestamp import big_choose
 
+def make_tracks_from_haydens_json_graph(json_graph):
+    """
+    Read a JSON dump of matlab graph similar to "Gata6Nanog1.json".
+    Return a dictionary mapping timestamp numbers to dictionaries mapping timestemps to tracks.
+
+    >>> timestamp_to_mappings = make_tracks_from_haydens_json_graph(json_graph)
+    >>> timestamp3_label_to_track = timestamp_to_mappings[3]
+    >>> track_for_label_6 = timestamp3_label_to_track[6]
+    """
+    edges = json_graph['G_based_on_nn_combined']['Edges']
+    mapping = {}
+    for thing in edges:
+        [src, dst] = thing["EndNodes"]
+        mapping[src] = dst
+    track_starts = sorted(set(mapping.keys()) - set(mapping.values()))
+    string_to_track = { s: count for (count, s) in enumerate(track_starts) }
+    for start in track_starts:
+        track = string_to_track[start]
+        next = mapping.get(start)
+        while next is not None:
+            string_to_track[next] = track
+            next = mapping.get(next)
+    parsed_strings = {}
+    timestamps = set()
+    for s in string_to_track:
+        [ts_string, label_string] = s.split("_")
+        parsed = (int(ts_string), int(label_string))
+        timestamps.add(parsed[0])
+        parsed_strings[s] = parsed
+    result = {ts: {} for ts in timestamps}
+    for (st, track) in string_to_track.items():
+        (ts, label) = parsed_strings[st]
+        ts_mapping = result[ts]
+        ts_mapping[label] = track
+    return result
+
 def unify_tracks(
     A,  # label array
     A_label_2_track,   # mapping of labels in A to track numbers
@@ -35,13 +71,26 @@ def unify_tracks(
                 l2t[label] = fresh_track
         max_label = max(*labels)
         choices = np.zeros((max_label+1,), dtype=np.int)
-        print(max_label, choices)
-        print(l2t)
+        #print(max_label, choices)
+        #print(l2t)
         for label in l2t:
             if label in labels:
                 choices[label] = l2t[label]
         Ar[:] = big_choose(Ar, choices)
     return (A_remapped, B_remapped)
+
+def get_track_vector_field(
+    old_label_array, 
+    old_labels_to_tracks,
+    new_label_array,
+    new_labels_to_tracks,
+    di = (10, 0, 0),  #  xyz offset between A[i,j,k] and A[i+1,j,k]
+    dj = (0, 10, 0),  #  xyz offset between A[i,j,k] and A[i,j+1,k]
+    dk = (0, 0, 10),  #  xyz offset between A[i,j,k] and A[i,j,k+1]
+    ):
+    (old_mapped, new_mapped) = unify_tracks(old_label_array, old_labels_to_tracks, new_label_array, new_labels_to_tracks)
+    V = VectorMaker(old_mapped, new_mapped, di, dj, dk)
+    return V.scaled_vectors
 
 def get_label_vector_field(
     old_label_array, 
