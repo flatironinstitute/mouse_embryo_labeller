@@ -64,11 +64,60 @@ def offset_vectors(vector_maker):
             vectors[Is, Js, Ks] = d
     return vectors
 
+def center_vectors(vector_maker):
+    """
+    Compute vectors for vector_maker using the following method:
+    For corresponding label volumes compute the vector difference between the "new" center and the "old" center.
+    Every voxel position in the "old" volume is assigned a vector pointing to the center of the new volume.  
+    All other vectors not in an old volume are zeros.
+    """
+    self = vector_maker
+    A = self.A
+    Acenters = self.Acenters
+    Bcenters = self.Bcenters
+    vectors = np.zeros(A.shape + (3,), dtype=np.float)
+    for (v, ca) in Acenters.items():
+        cb = Bcenters.get(v)
+        if cb is not None:
+            (Is, Js, Ks) = np.nonzero( (A == v).astype(np.int) )
+            sources = np.zeros(Is.shape + (3,), dtype=np.float)
+            sources[:, 0] = Is
+            sources[:, 1] = Js
+            sources[:, 2] = Ks
+            d = cb.reshape((1,3)) - sources
+            vectors[Is, Js, Ks] = d
+    return vectors
+
+
+def blend_vectors(vector_maker):
+    """
+    Compute vectors for vector_maker using the following method:
+    For corresponding label volumes compute the vector difference between the "new" center and the "old" center.
+    Every voxel position in the "old" volume is assigned a vector to a blend of the centers in the new volume
+    based on how near the position is to centers in the old volume.
+    """
+    self = vector_maker
+    A = self.A
+    Acenters = self.Acenters
+    Bcenters = self.Bcenters
+    vectors = np.zeros(A.shape + (3,), dtype=np.float)
+    for (v, ca) in Acenters.items():
+        cb = Bcenters.get(v)
+        if cb is not None:
+            (Is, Js, Ks) = np.nonzero( (A == v).astype(np.int) )
+            sources = np.zeros(Is.shape + (3,), dtype=np.float)
+            sources[:, 0] = Is
+            sources[:, 1] = Js
+            sources[:, 2] = Ks
+            d = cb.reshape((1,3)) - sources
+            vectors[Is, Js, Ks] = d
+    return vectors
 
 VECTORIZE_METHODS = dict(
     offset = offset_vectors,
+    center = center_vectors,
 )
-DEFAULT_VECTORIZE_METHOD = "offset"
+DEFAULT_VECTORIZE_METHOD = "center"
 
 def unify_tracks(
     A,  # label array
