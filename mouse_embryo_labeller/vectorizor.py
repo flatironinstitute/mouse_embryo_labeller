@@ -43,6 +43,33 @@ def make_tracks_from_haydens_json_graph(json_graph):
         ts_mapping[label] = track
     return result
 
+
+def offset_vectors(vector_maker):
+    """
+    Compute vectors for vector_maker using the following method:
+    For corresponding label volumes compute the vector difference between the "new" center and the "old" center.
+    Every voxel position in the "old" volume is assigned the difference vector in the vector field output.  
+    All other vectors not in an old volume are zeros.
+    """
+    self = vector_maker
+    A = self.A
+    Acenters = self.Acenters
+    Bcenters = self.Bcenters
+    vectors = np.zeros(A.shape + (3,), dtype=np.float)
+    for (v, ca) in Acenters.items():
+        cb = Bcenters.get(v)
+        if cb is not None:
+            d = cb - ca
+            (Is, Js, Ks) = np.nonzero( (A == v).astype(np.int) )
+            vectors[Is, Js, Ks] = d
+    return vectors
+
+
+VECTORIZE_METHODS = dict(
+    offset = offset_vectors,
+)
+DEFAULT_VECTORIZE_METHOD = "offset"
+
 def unify_tracks(
     A,  # label array
     A_label_2_track,   # mapping of labels in A to track numbers
@@ -122,8 +149,14 @@ class VectorMaker:
         di = (10, 0, 0),  #  xyz offset between A[i,j,k] and A[i+1,j,k]
         dj = (0, 10, 0),  #  xyz offset between A[i,j,k] and A[i,j+1,k]
         dk = (0, 0, 10),  #  xyz offset between A[i,j,k] and A[i,j,k+1]
+        method=DEFAULT_VECTORIZE_METHOD,
     ):
         assert A.shape == B.shape, "Arrays must match: " +repr((A.shape, B.shape))
+        assert method in VECTORIZE_METHODS, (
+            "no such vectorization method: " + repr(method) +
+            ".  Available methods: " + repr(list(VECTORIZE_METHODS.keys()))
+        )
+        self.vectorize_method = VECTORIZE_METHODS[method]
         self.A = A
         self.B = B
         self.di = vv(*di)
@@ -181,7 +214,8 @@ class VectorMaker:
                     self.min = np.minimum(self.min, m)
 
     def compute_vectors(self):
-        A = self.A
+        """Compute vectors using the chosen method."""
+        '''A = self.A
         Acenters = self.Acenters
         Bcenters = self.Bcenters
         vectors = np.zeros(A.shape + (3,), dtype=np.float)
@@ -191,8 +225,10 @@ class VectorMaker:
                 d = cb - ca
                 (Is, Js, Ks) = np.nonzero( (A == v).astype(np.int) )
                 vectors[Is, Js, Ks] = d
-        self.vectors = vectors
-        self.scaled_vectors = self.scale_indices(vectors)
+        self.vectors = vectors'''
+        vectorize_method = self.vectorize_method
+        self.vectors = vectorize_method(self)
+        self.scaled_vectors = self.scale_indices(self.vectors)
 
     def draw(self, W):
         from . import color_list
