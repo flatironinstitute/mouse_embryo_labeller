@@ -98,24 +98,47 @@ def blend_vectors(vector_maker):
     """
     self = vector_maker
     A = self.A
+    (II, JJ, KK) = A.shape
+    (Is, Js, Ks) = np.meshgrid(np.arange(II), np.arange(JJ), np.arange(KK), indexing='ij')
+    def Distance(i, j, k):
+        return np.sqrt((i - Is) ** 2 + (j - Js) ** 2 + (k - Ks) ** 2)
     Acenters = self.Acenters
     Bcenters = self.Bcenters
     vectors = np.zeros(A.shape + (3,), dtype=np.float)
-    for (v, ca) in Acenters.items():
-        cb = Bcenters.get(v)
-        if cb is not None:
-            (Is, Js, Ks) = np.nonzero( (A == v).astype(np.int) )
-            sources = np.zeros(Is.shape + (3,), dtype=np.float)
-            sources[:, 0] = Is
-            sources[:, 1] = Js
-            sources[:, 2] = Ks
-            d = cb.reshape((1,3)) - sources
-            vectors[Is, Js, Ks] = d
+    tracks = set(Acenters.keys()) & set(Bcenters.keys())
+    offsets = {t: (Bcenters[t] - Acenters[t]) for t in tracks}
+    Adistances = {t: Distance(*Acenters[t]) for t in tracks}
+    weighting_factors = {t: 1.0 for t in tracks}
+    for t in tracks:
+        for (t2, D) in Adistances.items():
+            if t2 != t:
+                weighting_factors[t] = weighting_factors[t] * D
+    w2 = 0
+    for w in weighting_factors.values():
+        w2 += w**2
+    normalizer = np.sqrt(w2)
+    for t in tracks:
+        #print()
+        #print ("for track", t)
+        weight = weighting_factors[t] / normalizer
+        #print (weight, "weights")
+        offset = offsets[t]
+        #print (offset, "offsets")
+        component = weight.reshape(weight.shape + (1,)) * offset.reshape((1,1,1,3))
+        #print (component, "component")
+        vectors += component
+    #print("vectors")
+    #print(vectors)
+    #sanity check
+    lvecs = vectors.reshape((II * JJ * KK, 3))
+    M = (np.abs(lvecs)).max(axis=0)
+    assert np.all( M < vv(II, JJ, KK)), "bad max: " + repr((M, II, JJ, KK))
     return vectors
 
 VECTORIZE_METHODS = dict(
     offset = offset_vectors,
     center = center_vectors,
+    blend = blend_vectors,
 )
 DEFAULT_VECTORIZE_METHOD = "center"
 
@@ -168,9 +191,10 @@ def get_track_vector_field(
     di = (10, 0, 0),  #  xyz offset between A[i,j,k] and A[i+1,j,k]
     dj = (0, 10, 0),  #  xyz offset between A[i,j,k] and A[i,j+1,k]
     dk = (0, 0, 10),  #  xyz offset between A[i,j,k] and A[i,j,k+1]
+    method=DEFAULT_VECTORIZE_METHOD,
     ):
     (old_mapped, new_mapped) = unify_tracks(old_label_array, old_labels_to_tracks, new_label_array, new_labels_to_tracks)
-    V = VectorMaker(old_mapped, new_mapped, di, dj, dk)
+    V = VectorMaker(old_mapped, new_mapped, di, dj, dk, method=method)
     return V.scaled_vectors
 
 def get_label_vector_field(
@@ -179,8 +203,9 @@ def get_label_vector_field(
     di = (10, 0, 0),  #  xyz offset between A[i,j,k] and A[i+1,j,k]
     dj = (0, 10, 0),  #  xyz offset between A[i,j,k] and A[i,j+1,k]
     dk = (0, 0, 10),  #  xyz offset between A[i,j,k] and A[i,j,k+1]
+    method=DEFAULT_VECTORIZE_METHOD,
     ):
-    V = VectorMaker(old_label_array, new_label_array, di, dj, dk)
+    V = VectorMaker(old_label_array, new_label_array, di, dj, dk, method=method)
     return V.scaled_vectors
 
 def vv(*args):
@@ -297,16 +322,16 @@ class VectorMaker:
         for i in range(I):
             for j in range(J):
                 for k in range(K):
-                    v = A[i, j, k]
-                    if v > 0:
-                        p = vv(i, j, k)
-                        v = vectors[i, j, k]
-                        if np.abs(v.max()) > 0:
-                            #dp = p + v
-                            loc1 = self.pos(p)
-                            #loc2 = self.pos(dp)
-                            loc2 = loc1 + self.scaled_vectors[i, j, k]
-                            W.arrow(loc1, loc2, 2)
+                    #v = A[i, j, k]
+                    #if v > 0:
+                    p = vv(i, j, k)
+                    v = vectors[i, j, k]
+                    if (np.abs(v)).max() > 0:
+                        #dp = p + v
+                        loc1 = self.pos(p)
+                        #loc2 = self.pos(dp)
+                        loc2 = loc1 + self.scaled_vectors[i, j, k]
+                        W.arrow(loc1, loc2, 2)
         # draw big arrows between corresponding centers
         Acenters = self.Acenters
         Bcenters = self.Bcenters
