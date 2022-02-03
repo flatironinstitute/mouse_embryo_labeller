@@ -222,6 +222,17 @@ class VectorMaker:
                             #loc2 = self.pos(dp)
                             loc2 = loc1 + self.scaled_vectors[i, j, k]
                             W.arrow(loc1, loc2, 2)
+        # draw big arrows between corresponding centers
+        Acenters = self.Acenters
+        Bcenters = self.Bcenters
+        l2c = self.label_to_color
+        for (v, cA) in Acenters.items():
+            cB = Bcenters.get(v)
+            if cB is not None:
+                locA = self.pos(cA)
+                locB = self.pos(cB)
+                color = l2c[v]
+                W.arrow(locA, locB, 5, lineWidth=8, color=color)
 
     def draw_centers(self, centers, radius):
         W = self.W
