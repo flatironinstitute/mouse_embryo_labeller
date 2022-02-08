@@ -18,8 +18,15 @@ def make_tracks_from_haydens_json_graph(json_graph):
     """
     edges = json_graph['G_based_on_nn_combined']['Edges']
     mapping = {}
+    splits = {}
+    all_ids = set()
     for thing in edges:
         [src, dst] = thing["EndNodes"]
+        all_ids.add(src)
+        all_ids.add(dst)
+        if src in mapping:
+            #print ("split", src, mapping[src], dst)
+            splits[src] = mapping[src]
         mapping[src] = dst
     track_starts = sorted(set(mapping.keys()) - set(mapping.values()))
     string_to_track = { s: count+1 for (count, s) in enumerate(track_starts) }
@@ -31,17 +38,25 @@ def make_tracks_from_haydens_json_graph(json_graph):
             next = mapping.get(next)
     parsed_strings = {}
     timestamps = set()
-    for s in string_to_track:
+    for s in all_ids:
         [ts_string, label_string] = s.split("_")
         parsed = (int(ts_string), int(label_string))
         timestamps.add(parsed[0])
         parsed_strings[s] = parsed
-    result = {ts: {} for ts in timestamps}
+    ts_to_label_to_track = {ts: {} for ts in timestamps}
     for (st, track) in string_to_track.items():
         (ts, label) = parsed_strings[st]
-        ts_mapping = result[ts]
+        ts_mapping = ts_to_label_to_track [ts]
         ts_mapping[label] = track
-    return result
+    ts_to_label_to_split_label = {ts: {} for ts in timestamps}
+    for (sparent, schild) in splits.items():
+        (parent_ts, parent_label) = parsed_strings[sparent]
+        (child_ts, child_label) = parsed_strings[schild]
+        if child_ts != parent_ts + 1:
+            print("WARNING: IGNORED bad timestamp order: ", repr((sparent, schild)))
+        else:
+            ts_to_label_to_split_label[parent_ts][parent_label] = child_label
+    return (ts_to_label_to_track, ts_to_label_to_split_label)
 
 
 def offset_vectors(vector_maker):
@@ -147,6 +162,7 @@ def unify_tracks(
     A_label_2_track,   # mapping of labels in A to track numbers
     B,  # label array
     B_label_2_track,   # mapping of labels in A to track numbers
+    splits,
 ):
     """
     Remap contents of A and B replacing arbitrary labels with corresponding tracks.
@@ -181,7 +197,104 @@ def unify_tracks(
                 choices[label] = l2t[label]
         assert choices[0] == 0, "bad choice for 0 " + repr((choices, l2t))
         Ar[:] = big_choose(Ar, choices)
+    # split logic
+    for (src, dst) in splits.items():
+        dst_track = B2t[dst]
+        current_track = A2t[src]
+        src_center = center_of_values(A_remapped, current_track)
+        dst_center = center_of_values(B_remapped, dst_track)
+        current_center = center_of_values(B_remapped, current_track)
+        # punt if any region is empty
+        if src_center is not None and dst_center is not None and current_center is not None:
+            vdst = normalize(dst_center - src_center)
+            vcurrent = normalize(current_center - src_center)
+            out = np.cross(vdst, vcurrent)
+            middle = (vdst + vcurrent)
+            split_vector = np.cross(out, middle)
+            if split_vector.dot(vdst) < 0:
+                split_vector = - split_vector
+            mask = (A_remapped == current_track).astype(np.int)
+            splitter = Splitter(mask, src_center, split_vector)
+            (II, JJ, KK) = splitter.positiveIJKs()
+            A_remapped[II, JJ, KK] = dst_track
+        else:
+            print("WARNING: null centers in split " + repr((src_center, dst_center, current_center)))
     return (A_remapped, B_remapped)
+
+def normalize(v, epsilon=1e-10):
+    n = np.linalg.norm(v)
+    if n < epsilon:
+        return np.array([1,0,0], dtype=np.float)   # arbitrary default unit
+    return v / n
+
+def center_of_values(A, value):
+    """
+    Find the weighted average of indices that have the value in A (or None if missing)
+    """
+    (Is, Js, Ks) = np.nonzero( (A == value).astype(np.int) )
+    N = len(Js)
+    if N < 1:
+        print("no such value" + repr((value, np.unique(A))))
+        return None
+    Ind = np.zeros((N, 3), dtype=np.int)
+    Ind[:, 0] = Is
+    Ind[:, 1] = Js
+    Ind[:, 2] = Ks
+    center = Ind.mean(axis=0)
+    return center
+
+
+class Splitter:
+
+    def __init__(self, mask, center, normal):
+        """
+        For center and normal in index dimensions identify the non-zero indices
+        in mask that are above and below the plane including the center orthogonal
+        to normal
+        """
+        center = np.array(center)
+        normal = np.array(normal)
+        normal = normal/np.linalg.norm(normal)
+        self.mask = mask
+        self.center = center
+        self.normal = normal
+        [Is, Js, Ks] = np.nonzero(mask)
+        ln = len(Is)
+        index_vectors = np.zeros((ln, 3), dtype=np.int)
+        index_vectors[:, 0] = Is
+        index_vectors[:, 1] = Js
+        index_vectors[:, 2] = Ks
+        shifted_vectors = index_vectors - center.reshape((1,3))
+        dots = shifted_vectors.dot(normal.reshape((3,1)))
+        self.radius = np.abs(dots).max()
+        positive_dots = (dots >= 0).reshape((ln,))
+        print ("positive", positive_dots.shape)
+        print ("index vectors", index_vectors.shape)
+        self.positive_indices = index_vectors[positive_dots]
+        self.negative_indices = index_vectors[np.logical_not(positive_dots)]
+        print ("negative", self.negative_indices.shape)
+
+    def positiveIJKs(self, indices=None):
+        if indices is None:
+            indices = self.positive_indices
+        return (indices[:,0], indices[:,1], indices[:,2], )
+
+    def negativeIJK(self):
+        return self.positiveIJKs(self.negative_indices)
+
+    def widget(self, pixels=600):
+        from jp_doodle import nd_frame
+        W = nd_frame.swatch3d(pixels=pixels, model_height=2*self.radius)
+        self.W = W
+        W.arrow(self.center, self.center + (self.radius * self.normal), lineWidth=5, head_length=0.3)
+        W.circle(self.center, 10, color="blue")
+        for ind in self.positive_indices:
+            W.circle(ind, 3, color="green")
+        for ind in self.negative_indices:
+            W.circle(ind, 3, color="red")
+        W.fit(0.6)
+        W.orbit_all(1.5 * self.radius, list(self.center))
+        return W
 
 def get_track_vector_field(
     old_label_array, 
