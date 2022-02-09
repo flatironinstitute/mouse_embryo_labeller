@@ -7,6 +7,7 @@ import glob
 import shutil
 from PIL import Image, ImageSequence
 import numpy as np
+from skimage import io
 from mouse_embryo_labeller import timestamp
 from mouse_embryo_labeller import timestamp_collection
 from mouse_embryo_labeller import nucleus_collection
@@ -252,6 +253,55 @@ def scale_channel(channel_array, maximum=256.0):
     factor = maximum * 1.0 / channel_array.max()
     result[:] = factor * channel_array
     return result
+
+def check_folder(folder):
+    folder = os.path.expanduser(folder)
+    folder = os.path.abspath(folder)
+    assert os.path.isdir(folder), "cannot find folder: " + repr(folder)
+    return folder
+
+MADDY_FOLDER = '/Users/awatters/misc/Abraham_Kohrman/maddy_data'
+
+def prepare_collection_for_maddy_data(
+    folder=MADDY_FOLDER,
+    collection_subfolder = "/collection",
+    tif_file_pattern="/*_rescaled_*.tif",
+    intensities_file_pattern="/%05d_rescaled_low.tif",
+    masks_file_pattern="/%05d_rescaled_low_cp_masks.tif",
+    stride=2,
+    ):
+    folder = check_folder(folder)
+    tiff_glob_pattern = folder + tif_file_pattern
+    tiff_paths = glob.glob(tiff_glob_pattern)
+    timestamp_numbers = set()
+    for tiff_path in tiff_paths:
+        fn = os.path.split(tiff_path)[-1]
+        sprefix = fn.split("_")[0]
+        iprefix = int(sprefix)
+        timestamp_numbers.add(iprefix)
+    collection_destination = folder + collection_subfolder
+    print ("=== Making collections in", collection_destination, "for", len(timestamp_numbers), "timestamps")
+    if not os.path.isdir(collection_destination):
+        os.mkdir(collection_destination)
+    helper = FileSystemHelper(collection_destination)
+    nc = helper.stored_nucleus_collection()
+    print ("Stored empty nucleus collection: ", nc.manifest_path)
+    for timestamp_number in sorted(timestamp_numbers):
+        intensities_path = folder + (intensities_file_pattern % timestamp_number)
+        assert os.path.isfile(intensities_path), "intensities not found: " + repr(intensities_path)
+        masks_path = folder + (masks_file_pattern % timestamp_number)
+        assert os.path.isfile(masks_path), "masks not found: " + repr(masks_path)
+        intensities = io.imread(intensities_path)
+        # intensities are 64bit -- could convert to smaller format.
+        masks = io.imread(masks_path)
+        assert masks.shape == intensities.shape, "arrays don't match: " + repr([masks.shape, intensities.shape])
+        si = intensities[::stride, ::stride, ::stride]
+        sm = masks[::stride, ::stride, ::stride]
+        ts = helper.add_timestamp(timestamp_number, si, sm)
+        print("::: timestamp", ts.manifest)
+    tsc = helper.stored_timestamp_collection()
+    print("Stored timestamp collection", tsc.manifest_path)
+    return helper
 
 GROUND_TRUTH_FOLDER = '/Users/awatters/misc/LisaBrown/embryo/WholeEmbryo'
 
