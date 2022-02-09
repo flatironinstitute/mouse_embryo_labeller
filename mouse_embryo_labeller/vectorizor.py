@@ -406,7 +406,7 @@ class VectorMaker:
         self.vectors = vectorize_method(self)
         self.scaled_vectors = self.scale_indices(self.vectors)
 
-    def draw(self, W):
+    def draw(self, W, limit=500):
         from . import color_list
         #W = self.W
         A = self.A
@@ -421,6 +421,7 @@ class VectorMaker:
         self.draw_centers(self.Bcenters, radius=7)
         (I, J, K) = A.shape
         vectors = self.vectors
+        info = []
         for i in range(I):
             for j in range(J):
                 for k in range(K):
@@ -433,7 +434,16 @@ class VectorMaker:
                         loc1 = self.pos(p)
                         #loc2 = self.pos(dp)
                         loc2 = loc1 + self.scaled_vectors[i, j, k]
-                        W.arrow(loc1, loc2, 2)
+                        #W.arrow(loc1, loc2, 2)
+                        info.append([loc1, loc2])
+        ln = len(info)
+        if ln < limit:
+            indices = range(ln)
+        else:
+            indices = np.random.choice(ln, limit, replace=True)
+        for i in indices:
+            [loc1, loc2] = info[i]
+            W.arrow(loc1, loc2, 2)
         # draw big arrows between corresponding centers
         Acenters = self.Acenters
         Bcenters = self.Bcenters
@@ -454,10 +464,11 @@ class VectorMaker:
             c = l2c[v]
             W.rect(pos, radius, radius, c)
 
-    def draw_array(self, A, radius):
+    def draw_array(self, A, radius, limit=100):
         W = self.W
         (I, J, K) = A.shape
         l2c = self.label_to_color
+        info = []
         for i in range(I):
             for j in range(J):
                 for k in range(K):
@@ -465,16 +476,25 @@ class VectorMaker:
                     if v > 0:
                         c = l2c[v]
                         pos = self.pos([i, j, k])
-                        W.circle(pos, radius, c, fill=False)
+                        #W.circle(pos, radius, c, fill=False)
+                        info.append((pos, c))
+        ln = len(info)
+        if ln < limit:
+            indices = range(ln)
+        else:
+            indices = np.random.choice(ln, limit, replace=True)
+        for i in indices:
+            (pos, c) = info[i]
+            W.circle(pos, radius, c, fill=False)
 
     def widget(self, pixels=600):
         from jp_doodle import nd_frame
         A = self.A
         B = self.B
-        Acount = len(np.nonzero(A)[0])
-        Bcount = len(np.nonzero(B)[0])
-        count = Acount + Bcount
-        assert count < 2000, "too many labels for this method of display: " + repr(count)
+        #Acount = len(np.nonzero(A)[0])
+        #Bcount = len(np.nonzero(B)[0])
+        #count = Acount + Bcount
+        #assert count < 2000, "too many labels for this method of display: " + repr(count)
         W = nd_frame.swatch3d(pixels=pixels, model_height=pixels)
         self.W = W
         self.draw(W)
