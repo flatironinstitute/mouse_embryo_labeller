@@ -310,7 +310,7 @@ def get_track_vector_field(
     V = VectorMaker(old_mapped, new_mapped, di, dj, dk, method=method)
     return V.scaled_vectors
 
-def get_label_vector_field(
+'''def get_label_vector_field(
     old_label_array, 
     new_label_array,
     di = (10, 0, 0),  #  xyz offset between A[i,j,k] and A[i+1,j,k]
@@ -319,7 +319,7 @@ def get_label_vector_field(
     method=DEFAULT_VECTORIZE_METHOD,
     ):
     V = VectorMaker(old_label_array, new_label_array, di, dj, dk, method=method)
-    return V.scaled_vectors
+    return V.scaled_vectors  COMMENTED - NOT USED'''
 
 def vv(*args):
     return np.array(args, dtype=np.float)
@@ -402,17 +402,6 @@ class VectorMaker:
 
     def compute_vectors(self):
         """Compute vectors using the chosen method."""
-        '''A = self.A
-        Acenters = self.Acenters
-        Bcenters = self.Bcenters
-        vectors = np.zeros(A.shape + (3,), dtype=np.float)
-        for (v, ca) in Acenters.items():
-            cb = Bcenters.get(v)
-            if cb is not None:
-                d = cb - ca
-                (Is, Js, Ks) = np.nonzero( (A == v).astype(np.int) )
-                vectors[Is, Js, Ks] = d
-        self.vectors = vectors'''
         vectorize_method = self.vectorize_method
         self.vectors = vectorize_method(self)
         self.scaled_vectors = self.scale_indices(self.vectors)
@@ -426,10 +415,10 @@ class VectorMaker:
         labels = list(set(Alabels) | set(Blabels))
         colors = color_list.get_colors(len(labels))
         self.label_to_color = {label: color_list.rgbhtml(color) for (label, color) in zip(labels, colors)}
-        self.draw_array(A, radius=3)
+        self.draw_array(A, radius=5)
         self.draw_array(self.B, radius=5)
-        self.draw_centers(self.Acenters, radius=3)
-        self.draw_centers(self.Bcenters, radius=3)
+        self.draw_centers(self.Acenters, radius=5)
+        self.draw_centers(self.Bcenters, radius=7)
         (I, J, K) = A.shape
         vectors = self.vectors
         for i in range(I):
