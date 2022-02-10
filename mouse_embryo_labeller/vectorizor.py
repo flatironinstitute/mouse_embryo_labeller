@@ -268,10 +268,10 @@ class Splitter:
         dots = shifted_vectors.dot(normal.reshape((3,1)))
         self.radius = np.abs(dots).max()
         positive_dots = (dots >= 0).reshape((ln,))
-        print ("positive", positive_dots.shape)
         print ("index vectors", index_vectors.shape)
         self.positive_indices = index_vectors[positive_dots]
         self.negative_indices = index_vectors[np.logical_not(positive_dots)]
+        print ("positive", self.positive_indices.shape)
         print ("negative", self.negative_indices.shape)
 
     def positiveIJKs(self, indices=None):
@@ -301,12 +301,18 @@ def get_track_vector_field(
     old_labels_to_tracks,
     new_label_array,
     new_labels_to_tracks,
+    splits,
     di = (10, 0, 0),  #  xyz offset between A[i,j,k] and A[i+1,j,k]
     dj = (0, 10, 0),  #  xyz offset between A[i,j,k] and A[i,j+1,k]
     dk = (0, 0, 10),  #  xyz offset between A[i,j,k] and A[i,j,k+1]
     method=DEFAULT_VECTORIZE_METHOD,
     ):
-    (old_mapped, new_mapped) = unify_tracks(old_label_array, old_labels_to_tracks, new_label_array, new_labels_to_tracks)
+    (old_mapped, new_mapped) = unify_tracks(
+        old_label_array, 
+        old_labels_to_tracks, 
+        new_label_array, 
+        new_labels_to_tracks,
+        splits,)
     V = VectorMaker(old_mapped, new_mapped, di, dj, dk, method=method)
     return V.scaled_vectors
 
