@@ -562,7 +562,7 @@ class VectorFactory:
             Atracks=Atracks,
             Btracks=Btracks,
             vectors=vectors,
-            X=vectors[:,:,0],
-            Y=vectors[:,:,1],
-            Z=vectors[:,:,2],
+            X=vectors[:,:,:,0],
+            Y=vectors[:,:,:,1],
+            Z=vectors[:,:,:,2],
         )
