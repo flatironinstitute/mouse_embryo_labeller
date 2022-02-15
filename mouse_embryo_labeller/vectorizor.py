@@ -507,3 +507,62 @@ class VectorMaker:
         W.fit(0.6)
         W.orbit_all(1.5 * self.radius, list(self.center))
         return W
+
+class VectorFactory:
+
+    """
+    Factory for computing vectorizations for a collection of timestamps and associated label arrays.
+    """
+
+    def __init__(
+        self,
+        json_graph,
+        get_label_array_function=None,  # function accepting a timestamp id and returning the label array for that timestamp.
+        di = (10, 0, 0),  #  xyz offset between A[i,j,k] and A[i+1,j,k]
+        dj = (0, 10, 0),  #  xyz offset between A[i,j,k] and A[i,j+1,k]
+        dk = (0, 0, 10),  #  xyz offset between A[i,j,k] and A[i,j,k+1]
+        method=DEFAULT_VECTORIZE_METHOD,
+        ):
+        self.json_graph = json_graph
+        self.get_label_array_function = get_label_array_function
+        self.deltas = (di, dj, dk)
+        self.method = method
+        (timestamp_mapping, ts_to_label_to_split_label) = make_tracks_from_haydens_json_graph(json_graph)
+        self.timestamp_mapping = timestamp_mapping
+        self.ts_to_label_split_to_split_label = ts_to_label_to_split_label
+
+    def get_vectors_for_timestamps(self, timestampIdA, timestampIdB):
+        get_labels = self.get_label_array_function
+        assert get_labels is not None, "Can't get labels -- please provide a get_label_array_function"
+        Alabels = get_labels(timestampIdA)
+        Blabels = get_labels(timestampIdB)
+        return self.get_vectors_for_timestamps(self, Alabels, timestampIdA, Blabels, timestampIdB)
+
+    def get_vectors_for_label_arrays(self, Alabels, timestampIdA, Blabels, timestampIdB):
+        assert Alabels.shape == Blabels.shape, "Label array shapes should match: " + repr([Alabels.shape, Blabels.shape])
+        Avalues = np.unique(Alabels)
+        Bvalues = np.unique(Blabels)
+        assert len(Avalues) < 2000, "too many A labels: " + repr(len(Avalues))
+        assert len(Bvalues) < 2000, "too many B labels: " + repr(len(Bvalues))
+        Amapping = self.timestamp_mapping[timestampIdA]
+        Bmapping = self.timestamp_mapping[timestampIdB]
+        splits = self.ts_to_label_split_to_split_label[timestampIdA]
+        (Atracks, Btracks) = unify_tracks(
+            Alabels, 
+            Amapping, 
+            Blabels, 
+            Bmapping,
+            splits,)
+        (di, dj, dk) = self.deltas
+        method = self.method
+        V = VectorMaker(Atracks, Btracks, di, dj, dk, method=method)
+        vectors = V.scaled_vectors
+        return dict(
+            maker=V,
+            Atracks=Atracks,
+            Btracks=Btracks,
+            vectors=vectors,
+            X=vectors[:,:,0],
+            Y=vectors[:,:,1],
+            Z=vectors[:,:,2],
+        )
