@@ -236,6 +236,7 @@ class EllipsoidFitter:
         self.initial_guess = self.guess_list()
         self.last_guess = self.initial_guess
         self._widget = None
+        self.ellipsoid_canvas = None
 
     def guess_list(self):
         "Geometry parameters packed as a sequence (for use in scipy.optimize)."
@@ -414,19 +415,29 @@ class EllipsoidFitter:
         """
         Get the ellipsoid info corresponding to the last guess.
         """
-        return EllipsoidInfo(self.transform_matrix())
+        return EllipsoidInfo(self.transform_matrix(), fitter=self)
+
+    def fit_image(self):
+        "Return an image of the fitted ellipse and data points from a displayed widget."
+        assert self.ellipsoid_canvas is not None, "Cannot get image -- widget is not displayed."
+        return self.ellipsoid_canvas.pixels_array()
 
 class EllipsoidInfo:
 
-    def __init__(self, transform_matrix):
+    def __init__(self, transform_matrix, fitter=None):
         """
         Calculations for a 3d ellipsoid.
         A point is on the ellipsoid if the transformed point lies on the unit sphere.
         """
+        self.fitter = fitter
         transform_matrix = np.array(transform_matrix, dtype=np.float)
         self.M = transform_matrix
         self.Minv = np.linalg.inv(self.M)
         [self.center] = apply_affine_transform(self.Minv, vv([0,0,0]))
+
+    def fit_image(self):
+        assert self.fitter is not None, "no attached fitter object -- can't find image."
+        return self.fitter.fit_image()
 
     def json_object(self):
         return self.M.tolist()
