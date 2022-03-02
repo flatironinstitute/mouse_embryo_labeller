@@ -243,6 +243,110 @@ for i in range(nlevels - 1):
         sti[t0index, 2] = v10index
         sti[t1index, 1] = v01index
 
+class MatrixEllipseGeometry:
+
+    """
+    Generate vertices and normals for unit sphere projected by affine matrix.
+    For use with three.js buffer geometries.
+    """
+
+    def __init__(self, M):
+        self.M = M
+        self.vertices = apply_affine_transform(M, sphere_vertices)
+        self.center = self.vertices.mean(axis=0)
+        self.normals = self.vertices - self.center.reshape((1,3))
+        # triangle indices for completeness
+        self.triangle_indices = sphere_triangle_indices.copy()
+
+    def swatch(self, pixels=500):
+        "for testing"
+        from jp_doodle import nd_frame
+        vs = self.vertices
+        ns = self.normals
+        ti = self.triangle_indices
+        m = vs.min(axis=0)
+        M = vs.max(axis=0)
+        D = M - m 
+        radius = D.max()
+        swatch = nd_frame.swatch3d(pixels=pixels, model_height=3 * radius)
+        for (v, n) in zip(vs, ns):
+            vn = v + n
+            swatch.line(v, vn)
+        colors = "rgba(0,255,0,0.3) rgba(0,0,255,0.3) rgba(255,0,0,0.3)".split()
+        count = 0
+        for (i,j,k) in ti:
+            count += 1
+            color = colors[count % len(colors)]
+            triangle = np.array([vs[i], vs[j], vs[k]], dtype=np.float)
+            c = triangle.mean(axis=0)
+            ts = 0.6 * triangle + 0.4 * (c.reshape((1,3)))
+            swatch.polygon(ts, color=color)
+        swatch.fit(0.8)
+        swatch.orbit_all(center3d=self.center, radius=3*radius)
+
+class Combined3DEllipseGeometries:
+    """
+    Generate vertices, normals, colors for a collection of ellipses defined by projection matrices
+    """
+    def __init__(self):
+        self.vertex_count = 0
+        self.vertex_arrays = []
+        self.normal_arrays = []
+        self.color_arrays = []
+        self.index_arrays = []
+
+    def add(self, Matrix, color):
+        G = MatrixEllipseGeometry(Matrix)
+        v = G.vertices
+        self.vertex_arrays.append(v)
+        self.normal_arrays.append(G.normals)
+        colors = v.copy()
+        # color scaled into [0, 1]
+        colors[:] = np.array(color).reshape((1,3)) / 255.0
+        self.color_arrays.append(colors)
+        # shift indices
+        indices = G.triangle_indices + self.vertex_count
+        self.index_arrays.append(indices)
+        self.vertex_count += len(v)
+
+    def flat_json_floats(self, float_arrays, format="%2.3e"):
+        A = np.array(float_arrays, dtype=np.float)
+        r = A.ravel()
+        L = [format % x for x in r]
+        c = ",".join(L)
+        return "[%s]" % c
+
+    def flat_json_dump(self, tsid):
+        import json
+        all_indices = np.array(self.index_arrays, dtype=np.int)
+        indices_json = json.dumps(all_indices.ravel().tolist())
+        vertices = np.array(self.vertex_arrays, dtype=np.float).ravel()
+        nvert = len(vertices) // 3
+        assert nvert == self.vertex_count, "bad count: " + repr((nver, self.vertex_count))
+        vertices = vertices.reshape((nvert, 3))
+        M = vertices.max(axis=0)
+        m = vertices.min(axis=0)
+        D = M - m 
+        center = 0.5 * (M + m)
+        center_json = self.flat_json_floats(center)
+        radius = float(D.max())
+        vertices_json = self.flat_json_floats(self.vertex_arrays)
+        normals_json = self.flat_json_floats(self.normal_arrays)
+        colors_json = self.flat_json_floats(self.color_arrays)
+        return (
+            '{ "tsid": "%s", "radius": %s, "center": %s,\n'
+            '"indices": %s,\n'
+            '"vertices": %s,\n'
+            '"colors": %s,\n'
+            '"normals": %s}') % (
+            tsid,
+            radius,
+            center_json,
+            indices_json, 
+            vertices_json, 
+            colors_json, 
+            normals_json)
+
 def test_sphere_swatch(pixels=500):
     from jp_doodle import nd_frame
     swatch = nd_frame.swatch3d(pixels=pixels, model_height=3)

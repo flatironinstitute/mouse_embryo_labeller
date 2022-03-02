@@ -159,6 +159,40 @@ class GeometryViewer:
         self._widget = None
         self.animation_arrays = []
 
+    def ts_geometry(self, tsid):
+        from mouse_embryo_labeller import ellipsoid_fit
+        C = ellipsoid_fit.Combined3DEllipseGeometries()
+        (tsinfo, tsg) = self.get_ts_info(tsid)
+        # xxxx don't add outer ellipse until tranparency works.
+        labels = tsg["labels"]
+        for info in labels.values():
+            color = info.get("color")
+            if color is None:
+                color = [100, 100, 100]
+            lellipse = info["ellipse"]
+            linfo = ellipsoid_fit.EllipsoidInfo(lellipse)
+            matrix = linfo.Minv
+            C.add(matrix, color)
+        return C
+
+    def geometry_json(self):
+        g = self.geometry
+        tss = g["timestamps"]
+        tsids = sorted([int(x) for x in tss.keys()])
+        geometry_jsons = []
+        for tsid in tsids:
+            C = self.ts_geometry(tsid)
+            g_json = C.flat_json_dump(tsid)
+            geometry_jsons.append(g_json)
+        inner = ",\n".join(geometry_jsons)
+        return "[\n%s\n]" % inner
+
+    def save_json(self, to_path):
+        f = open(to_path, 'w')
+        json = self.geometry_json()
+        f.write(json)
+        f.close()
+
     def widget(self, side=800):
         from jp_doodle import dual_canvas, nd_frame
         import ipywidgets as widgets
@@ -220,6 +254,14 @@ class GeometryViewer:
     def change_timestamp(self, ignored):
         timestamp = self.slider.value
         self.draw_ts(timestamp)
+
+    def get_ts_info(self, tsid):
+        g = self.geometry
+        tss = g["timestamps"]
+        tsg = tss.get(str(tsid))
+        tsellipse = tsg["ellipse"]
+        tsinfo = ellipsoid_fit.EllipsoidInfo(tsellipse)
+        return (tsinfo, tsg)
 
     def draw_ts(self, tsid):
         #print ("drawing ts", tsid)
