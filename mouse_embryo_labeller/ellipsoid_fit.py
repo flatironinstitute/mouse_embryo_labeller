@@ -2,6 +2,8 @@
 Tools for fitting 3d point collections to ellipsoid containers.
 """
 
+import fractions
+from traceback import format_exception_only
 import numpy as np
 import scipy.optimize as opt
 from numpy.linalg import norm
@@ -199,6 +201,65 @@ for I in range(-HSIDE, HSIDE):
                 sphere_points[count] = (x, y, z)
                 count += 1
 sphere_points = sphere_points[:count]
+
+# constants to generate unit sphere triangles for ellipse 3d rendering
+fraction90degrees = 3
+dtheta = np.pi / (fraction90degrees * 2)
+multipliers = list(range(-fraction90degrees, fraction90degrees+1))
+multipliers2 = list(range(fraction90degrees * 4 + 1))
+spherelevels = []
+for i in multipliers:
+    thislevel = []
+    phi = i * dtheta
+    r = np.cos(phi)
+    y = np.sin(phi)
+    for j in multipliers2:
+        theta = j  * dtheta
+        x = r * np.cos(theta)
+        z = r * np.sin(theta)
+        thislevel.append([x, y, z])
+    spherelevels.append(thislevel)
+nlevels = len(spherelevels)
+nangles = len(spherelevels[0])
+
+all_levels = np.array(spherelevels, dtype=np.float)
+rlevels = all_levels.ravel()
+sphere_vertices = rlevels.reshape((len(rlevels)//3, 3))
+
+n_sphere_triangles = 2 * (nlevels - 1) * (nangles - 1)
+sti = sphere_triangle_indices = np.zeros((n_sphere_triangles, 3), dtype=np.int)
+# there is a more clever way to do this...
+for i in range(nlevels - 1):
+    for j in range(nangles- 1):
+        v00index = j + i * nangles
+        v01index = v00index + 1
+        v10index = v00index + nangles
+        v11index = v10index + 1
+        t0index = 2 * (j + i * (nangles - 1))
+        t1index = t0index + 1
+        #print(t0index, t1index, sti.shape)
+        sti[t0index, 0] = sti[t1index, 0] = v00index
+        sti[t0index, 1] = sti[t1index, 2] = v11index
+        sti[t0index, 2] = v10index
+        sti[t1index, 1] = v01index
+
+def test_sphere_swatch(pixels=500):
+    from jp_doodle import nd_frame
+    swatch = nd_frame.swatch3d(pixels=pixels, model_height=3)
+    sv = sphere_vertices
+    for p in sphere_vertices:
+        p1 = 1.5 * p 
+        swatch.line(p, p1)
+    colors = "rgba(0,255,0,0.3) rgba(0,0,255,0.3) rgba(255,0,0,0.3)".split()
+    count = 0
+    for (i,j,k) in sphere_triangle_indices:
+        count += 1
+        color = colors[count % len(colors)]
+        triangle = np.array([sv[i], sv[j], sv[k]], dtype=np.float)
+        c = triangle.mean(axis=0)
+        ts = 0.6 * triangle + 0.4 * (c.reshape((1,3)))
+        swatch.polygon(ts, color=color)
+    swatch.orbit_all(center3d=[0,0,0], radius=3)
 
 class EllipsoidFitter:
         
