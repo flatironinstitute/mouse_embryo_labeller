@@ -163,7 +163,9 @@ class GeometryViewer:
         from mouse_embryo_labeller import ellipsoid_fit
         C = ellipsoid_fit.Combined3DEllipseGeometries()
         (tsinfo, tsg) = self.get_ts_info(tsid)
-        # xxxx don't add outer ellipse until tranparency works.
+        # add outer ellipse
+        matrix = tsinfo.Minv
+        C.add(matrix, [25,25,55])
         labels = tsg["labels"]
         for info in labels.values():
             color = info.get("color")
