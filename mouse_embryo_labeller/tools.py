@@ -11,6 +11,7 @@ from skimage import io
 from mouse_embryo_labeller import timestamp
 from mouse_embryo_labeller import timestamp_collection
 from mouse_embryo_labeller import nucleus_collection
+import pandas as pd
 
 EXAMPLE_FOLDER = "../example_data/"
 
@@ -21,6 +22,7 @@ def preprocess_sample_data(
     intensities_pattern="/Users/awatters/misc/lisa2/mouse-embryo-nuclei/H9OriginalIntensityImages/klbOut_CH1_%06d.klb",
     sanity_limit=10000,
     ):
+    print("banana")
     "preprocess the example H9 data, subsample j and k dimensions by stride"
     try:
         import pyklb
@@ -34,7 +36,7 @@ def preprocess_sample_data(
     npz_pattern = ts_pattern + ".npz"
     for i in range(sanity_limit):
         labels_path = labels_pattern % i
-        intensities_path = intensities_pattern % i
+        intensities_path = intensities_pattern % (i,i)
         le = os.path.exists(labels_path)
         ie = os.path.exists(intensities_path)
         print()
@@ -79,6 +81,121 @@ def preprocess_sample_data(
     nc.save_json(destination)
     print("done.")
 
+
+def to_even(x):
+    return 2*int(round(x/2))    
+    
+    
+def preprocess_sample_data_Kohrman(
+    stride=4, 
+    destination=EXAMPLE_FOLDER,
+    labels_pattern="/Users/awatters/misc/lisa2/mouse-embryo-nuclei/H9/H9_%s_Labels.tiff",
+    intensities_pattern="/Users/awatters/misc/lisa2/mouse-embryo-nuclei/H9OriginalIntensityImages/klbOut_CH1_%06d.klb",
+    cropbox_path = '/media/posfailab/Chomky_Drive1/Zsombor/220218/stack_10_channel_0_obj_left/cropped/cropboxes/',
+    sanity_limit=10000,
+    ):
+    offset = 150 #THIS WILL BREAK IF MASHA CHANGES OFFSET!!
+    vpairs = pd.read_csv(os.path.join(cropbox_path, 'vpairs.csv'), index_col = [0])
+    hpairs = pd.read_csv(os.path.join(cropbox_path, 'hpairs.csv'), index_col = [0])
+    vpairs = tuple(map(int, vpairs['all'][0][1:-1].split(', ')))
+    hpairs = tuple(map(int, hpairs['all'][0][1:-1].split(', ')))
+    v1 = max(hpairs[0]-offset,0)
+    v2 = min(hpairs[1]+offset, 2048)
+    h1 = max(vpairs[0]-offset,0)
+    h2 = min(vpairs[1]+offset, 2048)
+    
+    """
+    import glob, os
+    import warnings
+    warnings.filterwarnings('ignore')
+
+    import numpy as np
+    import pandas as pd
+    import time
+
+    from skimage.transform import rescale
+    import scipy.ndimage as ndimage
+    import imageio
+    import h5py
+
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from skimage.io import imsave
+    #from pyklb import readfull
+    """
+    "preprocess the example H9 data, subsample j and k dimensions by stride"
+    try:
+        import pyklb
+    except ImportError:
+        print ("Please install pyklb or fix any install problems.")
+        print ("Install problem fix at: https://github.com/bhoeckendorf/pyklb/issues/3")
+        raise
+    tsc = timestamp_collection.TimestampCollection()
+    ts_pattern = destination + "/ts%s"
+    json_pattern = ts_pattern + ".json"
+    npz_pattern = ts_pattern + ".npz"
+    """
+    if crop_KLBs:
+        if "Long" in intensities_pattern:
+            which_cam = 'Long'
+        else:
+            which_cam = 'Short'
+        images = glob.glob(root + '/out/folder_Cam_'+which_cam+'*/klbOut_Cam_'+which_cam+'*.klb')
+    """    
+        
+        
+    for i in range(sanity_limit):
+        labels_path = labels_pattern % i
+        #intensities_helper = intensities_subdir 
+        intensities_path = intensities_pattern %(i,i)
+        le = os.path.exists(labels_path)
+        ie = os.path.exists(intensities_path)
+        print()
+        print("labels:", labels_path)
+        print("intensities", intensities_path)
+        if not (le and ie):
+            if le:
+                raise ValueError("labels without intensities found")
+            if ie:
+                raise ValueError("intensities without labels found")
+            print ("files not found... finishing")
+            break
+        img = pyklb.readfull(intensities_path)
+        img = img[:, h1:h2, v1:v2]
+            
+        labels = load_tiff_array(labels_path)
+        labels = np.transpose(labels,(0,2,1))
+        assert img.shape == labels.shape, "bad shapes " + repr((img.shape, labels.shape))
+        # truncate j and k
+        # This logic is moved to FileSystemHelper... not refactored here yet.
+        s_img = img[:, ::stride, ::stride]
+        s_labels = labels[:, ::stride, ::stride]
+        ts = timestamp.Timestamp(i)
+        ts.add_source_arrays(s_img, s_labels)
+        tsc.add_timestamp(ts)
+        # store and discard the timestamp arrays to prevent memory leakage.
+        ts.get_truncated_arrays(test_array=None)
+        json_path = json_pattern % ts.identifier
+        npz_path = npz_pattern % ts.identifier
+        ts.save_mapping(json_path)
+        ts.save_truncated_arrays(npz_path, discard=True)
+        # store the manifest for this timestamp
+        ts.manifest = {
+                "identity": ts.identifier,
+                "json_path": timestamp_collection.filename_only(json_path),
+                "npz_path": timestamp_collection.filename_only(npz_path),
+            }
+    #print("now truncating all time slices...")
+    #tsc.truncate_all()
+    #ts_pattern = destination + "/ts%s"
+    print("storing timestamps with pattern", repr(ts_pattern))
+    tsc.store_all(ts_pattern)
+    print("Creating empty nucleus collection...")
+    nc = nucleus_collection.NucleusCollection()
+    nc.save_json(destination)
+    print("done.")
+    
+    
 class FileSystemHelper:
     "Refactored common file system operations for reuse."
 
