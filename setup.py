@@ -18,6 +18,7 @@ setup(
         "jp_doodle",
         "jp_proxy_widget",
         "scikit-image",
+        "pandas",
         ],
     scripts=[
         "bin/roi_from_tiff"
