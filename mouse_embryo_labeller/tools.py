@@ -420,6 +420,145 @@ def prepare_collection_for_maddy_data(
     print("Stored timestamp collection", tsc.manifest_path)
     return helper
 
+class ForAaronCollector:
+
+    """
+    Helper for generating collections structured like this example:
+    rusty://mnt/home/akohrman/ceph/for_Aaron/
+    """
+
+    def __init__(
+        self,
+        destination_folder="/Users/awatters/misc/Abraham_Kohrman/for_Aaron/collection",
+        root="/Users/awatters/misc/Abraham_Kohrman/for_Aaron",
+        img_pattern="220309/stack_0_channel_0_obj_left/out/folder_Cam_Long_%(n)05d.lux/klbOut_Cam_Long_%(n)05d.lux.klb",
+        label_pattern="220309_out/st0/klbOut_Cam_Long_%(n)05d.lux.label.tif",
+    ):
+        self.root = root
+        self.full_image_pattern = os.path.join(root, img_pattern)
+        self.full_label_pattern = os.path.join(root, label_pattern)
+        self.destination_folder = destination_folder
+        self.helper = FileSystemHelper(destination_folder)
+        self.combined_slicing = None
+
+    def label_path(self, ts_number):
+        subst = dict(n=ts_number)
+        return self.full_label_pattern % subst
+
+    def image_path(self, ts_number):
+        subst = dict(n=ts_number)
+        return self.full_image_pattern % subst
+
+    def get_slicing(self, sanity_limit=10000):
+        """
+        Determine the slicing containing all labels and check file consistency.
+        """
+        from . import geometry
+        print()
+        print("Determining label geometry and checking file matches.")
+        done = False
+        max_ts = None
+        combined_slicing = None
+        for ts_number in range(0, sanity_limit):
+            subst = dict(n=ts_number)
+            label_path = self.full_label_pattern % subst
+            img_path = self.full_image_pattern % subst
+            if os.path.isfile(label_path):
+                assert os.path.isfile(img_path), "No matching image file: " + repr((label_path, img_path))
+                label_array = self.get_label_array(label_path)
+                max_ts = ts_number
+                slicing = geometry.positive_slicing(label_array)
+                print (ts_number, "for", repr(label_path), "slicing", slicing)
+                if combined_slicing is not None:
+                    combined_slicing = geometry.unify_slicing(combined_slicing, slicing)
+                else:
+                    combined_slicing = slicing
+            else:
+                done = True
+                break
+        assert done, "Too many label paths found: " + repr(max_ts)
+        assert combined_slicing is not None, "No label paths found: " + repr(self.full_label_pattern)
+        print("combined slicing", combined_slicing)
+        self.combined_slicing = combined_slicing
+        self.max_ts = max_ts
+
+    def prepare_collections(self):
+        if self.combined_slicing is None:
+            self.get_slicing()
+        for ts_number in range(self.max_ts):
+            print()
+            print ("Preparing ts", ts_number)
+            not finished
+
+    def get_label_array(self, from_path):
+        matrix_bad_axes = load_tiff_array(from_path)
+        matrix_good_axes = np.swapaxes(matrix_bad_axes, 1, 2)
+        return matrix_good_axes
+
+class ParseMatlabJSONDump:
+
+    """
+    Read a JSON dump of matlab graph similar to "Gata6Nanog1.json".
+    """
+
+    def __init__(self, json_graph):
+        # the json graph dump should be a dictionary with one entry at the top level
+        [(self.graph_name, self.graph_info)] = list(json_graph.items())
+        self.node2timestamp = {}
+        self.name2node = {}
+        self.time_stamps = set()
+        # collect nodes and timestamps
+        edge_info = self.graph_info["Edges"]
+        for edge_map in edge_info:
+            [src, dst] = edge_map["EndNodes"]
+            self.add_node(src)
+            self.add_node(dst)
+        nodes_info = self.graph_info["Nodes"]
+        for node_map in nodes_info:
+            node_name = node_map["Name"]
+            self.add_node(node_name)
+        self.ts_to_labels = {ts: set() for ts in self.time_stamps}
+        # collect labels in timestamps
+        for (ts, label) in self.node2timestamp:
+            self.ts_to_labels[ts].add(label)
+        # determine parent/child relationship
+        self.node2parent = {}
+        self.node2children = {node: [] for node in self.node2timestamp}
+        for edge_map in edge_info:
+            [src_name, dst_name] = edge_map["EndNodes"]
+            src_node = self.name2node[src_name]
+            dst_node = self.name2node[dst_name]
+            assert dst_node not in self.node2parent, "Multiple parent? " + repr((dst_node, src_node, self.node2parent[dst_node]))
+            self.node2parent[dst_node] = src_node
+            self.node2children[src_node].append(dst_node)
+            #assert len(self.node2children[src_node]) <= 2, "Too many children? " + repr([src_node, self.node2children[src_node]])
+        # find non-split nodes
+        parent_to_single_child = {}
+        for (node, children) in self.node2children.items():
+            if len(children) == 1:
+                parent_to_single_child[node] = children[0]
+        # find tracks
+        start_node_to_track = {}
+        start_nodes = set(parent_to_single_child.keys()) - set(parent_to_single_child.values())
+        for start_node in start_nodes:
+            track = []
+            current_node = start_node
+            while current_node is not None:
+                track.append(current_node)
+                current_node = parent_to_single_child.get(current_node)
+            start_node_to_track[start_node] = track
+        self.start_node_to_track = start_node_to_track
+        
+    def add_node(self, node_name):
+        [ts_str, label_str] = node_name.split("_")
+        ts = int(ts_str)
+        label = int(label_str)
+        node = (ts, label)
+        self.node2timestamp[node] = ts
+        self.time_stamps.add(ts)
+        self.name2node[node_name] = node
+    
+
 GROUND_TRUTH_FOLDER = '/Users/awatters/misc/LisaBrown/embryo/WholeEmbryo'
 
 class GroundTruthProcessor:
