@@ -66,11 +66,12 @@ def preprocess_sample_data(
         ts.save_mapping(json_path)
         ts.save_truncated_arrays(npz_path, discard=True)
         # store the manifest for this timestamp
-        ts.manifest = {
-                "identity": ts.identifier,
-                "json_path": timestamp_collection.filename_only(json_path),
-                "npz_path": timestamp_collection.filename_only(npz_path),
-            }
+        #ts.manifest = {
+        #        "identity": ts.identifier,
+        #        "json_path": timestamp_collection.filename_only(json_path),
+        #        "npz_path": timestamp_collection.filename_only(npz_path),
+        #    }
+        ts.get_manifest()
     #print("now truncating all time slices...")
     #tsc.truncate_all()
     #ts_pattern = destination + "/ts%s"
