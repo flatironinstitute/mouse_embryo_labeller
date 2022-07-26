@@ -134,8 +134,14 @@ class TimestampCollection:
         for (identity, ts) in self.id_to_timestamp.items():
             ts.get_truncated_arrays(maxlabels)
             """
+
+    store_all_pattern = None
             
-    def store_all(self, pattern, verbose=True):
+    def store_all(self, pattern=None, verbose=True):
+        if pattern is None:
+            pattern = self.store_all_pattern
+        assert pattern is not None, "pattern required"
+        self.store_all_pattern = pattern
         manifest = []
         #json_pattern = pattern + ".json"
         #npz_pattern = pattern + ".npz"
@@ -147,7 +153,7 @@ class TimestampCollection:
             #    "json_path": filename_only(json_path),
             #    "npz_path": filename_only(npz_path),
             #}
-            entry = ts.manifest
+            entry = ts.get_manifest()
             manifest.append(entry)
             #if verbose:
             #    print ("storing ts", (json_path, npz_path))
