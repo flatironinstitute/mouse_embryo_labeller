@@ -172,8 +172,14 @@ class NucleusCollection:
     def colors_in_use(self):
         return set(tuple(n.color) for n in self.nuclei)
 
-    def save_json(self, to_folder, to_filename=None):
+    save_json_folder = None
+
+    def save_json(self, to_folder=None, to_filename=None):
         json_ob = [n.json_description() for n in self.nuclei]
+        if to_folder is None:
+            to_folder = self.save_json_folder
+        assert to_folder is not None, "to folder is required"
+        self.save_json_folder = to_folder
         if to_filename is None:
             to_filename = self.filename
         to_path = os.path.join(to_folder, to_filename)
