@@ -18,9 +18,22 @@ class Timestamp:
         self.unique_labels = None
         self.label_to_nucleus = None
         self.manifest = None
+        self.save_path = None
+        self.npz_path = None
         self.array_path = None
         self.special_labels = []
         self.reset_all_arrays()
+
+    def get_manifest(self):
+        from . import timestamp_collection
+        assert self.save_path is not None
+        assert self.npz_path is not None
+        self.manifest = {
+                "identity": self.identifier,
+                "json_path": timestamp_collection.filename_only(self.save_path),
+                "npz_path": timestamp_collection.filename_only(self.npz_path),
+            }
+        return self.manifest
 
     def clean_label_to_nucleus(self):
         result = {}
@@ -80,6 +93,7 @@ class Timestamp:
         self.array_path = path
 
     def save_truncated_arrays(self, to_path, discard=True):
+        self.npz_path = to_path
         l = self.l3d_truncated
         r = self.r3d_truncated
         e = self.l3d_extruded
