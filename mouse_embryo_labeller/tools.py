@@ -2,6 +2,7 @@
 Miscellaneous functionality.
 """
 
+import enum
 import os
 import glob
 import shutil
@@ -530,6 +531,8 @@ class ParseMatlabJSONDump:
             src_node = self.name2node[src_name]
             dst_node = self.name2node[dst_name]
             assert dst_node not in self.node2parent, "Multiple parent? " + repr((dst_node, src_node, self.node2parent[dst_node]))
+            if dst_node[0] <= src_node[0]:
+                print("WARNING: edge out of order", src_node, dst_node)
             self.node2parent[dst_node] = src_node
             self.node2children[src_node].append(dst_node)
             #assert len(self.node2children[src_node]) <= 2, "Too many children? " + repr([src_node, self.node2children[src_node]])
@@ -549,6 +552,34 @@ class ParseMatlabJSONDump:
                 current_node = parent_to_single_child.get(current_node)
             start_node_to_track[start_node] = track
         self.start_node_to_track = start_node_to_track
+
+    def install_lineage_in_collections(self, ts_collection, node_collection):
+        node_to_nucleus = {}
+        # create nuclei for tracks and map labels
+        for (num, (node, track)) in enumerate(sorted((self.start_node_to_track.items()))):
+            track_name = "N" + repr(num)
+            print ("storing nucleus/track", track_name)
+            nucleus = node_collection.get_or_make_nucleus(track_name)
+            node_to_nucleus[node] = nucleus
+            for tracknode in track:
+                (timestamp_num, label) = tracknode
+                node_to_nucleus[tracknode] = nucleus
+                timestamp = ts_collection.get_timestamp(timestamp_num)
+                timestamp.assign_nucleus(label, nucleus)
+        # assign parentage for tracks
+        for (childnode, parentnode) in self.node2parent.items():
+            if childnode[0] <= parentnode[0]:
+                print ("WARNING: bad parent/child timestamp order: ". parentnode, childnode)
+            childnucleus = node_to_nucleus.get(childnode)
+            if childnucleus is None:
+                print ("WARNING: no nucleus for child", childnode)
+                continue
+            parentnucleus = node_to_nucleus.get(parentnode)
+            if parentnucleus is None:
+                print ("WARNING: no nucleus for parent", parentnode)
+                continue
+            if childnucleus is not parentnucleus:
+                childnucleus.reparent(parentnucleus.identifier)
         
     def add_node(self, node_name):
         [ts_str, label_str] = node_name.split("_")

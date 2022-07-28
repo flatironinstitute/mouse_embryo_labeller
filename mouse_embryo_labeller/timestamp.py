@@ -27,7 +27,9 @@ class Timestamp:
     def get_manifest(self):
         from . import timestamp_collection
         assert self.save_path is not None
-        assert self.npz_path is not None
+        #assert self.npz_path is not None
+        if self.npz_path is None:
+            self.npz_path = self.save_path.replace(".json", ".npz")
         self.manifest = {
                 "identity": self.identifier,
                 "json_path": timestamp_collection.filename_only(self.save_path),

@@ -16,6 +16,7 @@ def collection_from_json(from_folder, from_filename=DEFAULT_FILENAME):
     f.close()
     nuclei = [nucleus.nucleus_from_json(x) for x in json_ob]
     result = NucleusCollection(filename=from_filename, nuclei=nuclei)
+    result.save_json_folder = from_folder
     return result
 
 

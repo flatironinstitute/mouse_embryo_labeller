@@ -168,16 +168,20 @@ class TimestampCollection:
         f.close()
 
 def manifest_file_path(from_pattern):
+    #self.store_all_pattern = from_pattern
     return (from_pattern % ("_manifest")) + ".json"
 
-def load_preprocessed_timestamps(from_folder, nucleus_collection, filename="ts_manifest.json"):
+def load_preprocessed_timestamps(from_folder, nucleus_collection, pattern_fragment="ts%s"):
     def expand(fn):
         return os.path.join(from_folder, fn)
-    mpath = expand(filename)
+    #mpath = expand(filename)
+    pattern = expand(pattern_fragment)
+    mpath = manifest_file_path(pattern)
     f = open(mpath)
     manifest = json.load(f)
     f.close()
     result = TimestampCollection()
+    result.store_all_pattern = pattern
     for description in manifest:
         ts = timestamp.Timestamp(description["identity"])
         # don't hog memory -- load arrays only on demand!
