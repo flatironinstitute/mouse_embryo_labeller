@@ -22,7 +22,7 @@ installing the Anaconda distribution in single user mode:
 The following image shows an example presentation of the tracker tools with some of
 the interactive controls annotated for reference.
 
-<img src="annotated_tracker.png" width="600">
+<img src="annotated_tracker.png">
 
 ## Installation
 
