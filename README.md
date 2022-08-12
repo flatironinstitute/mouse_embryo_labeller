@@ -3,6 +3,11 @@
 
 This package includes tools for tracking mouse embryo cell nuclei over time using data derived from 4d microscopy.
 
+<a href="tracker_notes.md">
+Please see tracker_notes.md for a walk through of how to use the mouse
+tracker interactive visualization.
+</a>
+
 
 <img src="nuclei.png" width="800"/>
 
