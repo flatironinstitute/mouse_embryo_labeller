@@ -5,6 +5,12 @@ These brief notes are based on a presentation given to the Postfai lab 11 August
 
 ## What is the tracker tool?
 
+The tracker tool allows an analyst to view microscopy image data in combination with
+labelled segmentation data which usually identifies cell nuclei shown in the microscopy image data.
+The tracker can view many image volume pairs across many timestamps and the labelled segmentation
+data can be organized into "tracks" representing the same nucleus over time, and the "tracks"
+can be organized into tree structures showing cell ancestry relationships.
+
 The tracker tool is a Jupyter widget.
 It runs inside Jupyter notebooks.
 It is implemented using Python 3.6+.
@@ -12,6 +18,11 @@ It is implemented using Python 3.6+.
 If you need to get Python and Jupyter I recommend
 installing the Anaconda distribution in single user mode:
 [The Anaconda distribution in single user mode](https://www.continuum.io/downloads).
+
+The following image shows an example presentation of the tracker tools with some of
+the interactive controls annotated for reference.
+
+<img src="annotated_tracker.png" width="600">
 
 ## Installation
 
